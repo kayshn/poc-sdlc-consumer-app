@@ -1,7 +1,9 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, store
+from app.main import MAX_TTL_SECONDS, app, store
 
 
 @pytest.fixture(autouse=True)
@@ -71,3 +73,91 @@ def test_audit_records_the_code_not_the_target(client):
     create(client, "https://example.com/secret-path")
     assert store.audit[0]["action"] == "link.create"
     assert "secret-path" not in str(store.audit)
+
+
+def create_ttl(client, ttl, user="alice"):
+    return client.post(
+        "/links",
+        json={"target": "https://example.com/t", "ttl_seconds": ttl},
+        headers={"X-User-Id": user},
+    )
+
+
+def expire(code):
+    store.links[code].expires_at = datetime.now(UTC) - timedelta(seconds=1)
+
+
+def test_no_ttl_never_expires(client):
+    body = create(client, "https://example.com/a").json()
+    assert body["expires_at"] is None
+    assert body["expired"] is False
+    assert client.get(f"/{body['code']}").status_code == 307
+
+
+def test_ttl_link_redirects_before_expiry(client):
+    body = create_ttl(client, 60).json()
+    assert body["expires_at"] is not None
+    assert body["expired"] is False
+    assert client.get(f"/{body['code']}").status_code == 307
+
+
+def test_expiry_boundary_is_inclusive(client):
+    code = create_ttl(client, 60).json()["code"]
+    link = store.links[code]
+    assert not link.is_expired(link.expires_at - timedelta(microseconds=1))
+    assert link.is_expired(link.expires_at)
+
+
+def test_expired_follow_matches_unknown_code(client):
+    code = create_ttl(client, 60).json()["code"]
+    expire(code)
+    expired = client.get(f"/{code}")
+    unknown = client.get("/doesnotexist")
+    assert expired.status_code == unknown.status_code == 404
+    assert expired.content == unknown.content
+    assert expired.headers == unknown.headers
+    assert "location" not in expired.headers
+
+
+def test_expired_links_are_retained_and_listed_for_owner_only(client):
+    code = create_ttl(client, 60).json()["code"]
+    expire(code)
+    assert code in store.links
+    mine = client.get("/links", headers={"X-User-Id": "alice"}).json()
+    assert [(link["code"], link["expired"]) for link in mine] == [(code, True)]
+    assert client.get("/links", headers={"X-User-Id": "bob"}).json() == []
+
+
+def test_delete_expired_link(client):
+    code = create_ttl(client, 60).json()["code"]
+    expire(code)
+    assert client.delete(f"/links/{code}", headers={"X-User-Id": "bob"}).status_code == 404
+    assert client.delete(f"/links/{code}", headers={"X-User-Id": "alice"}).status_code == 204
+    assert store.audit[-1]["action"] == "link.delete"
+    assert store.audit[-1]["entity"] == code
+
+
+def test_non_owner_delete_is_404_before_expiry(client):
+    code = create_ttl(client, 60).json()["code"]
+    assert client.delete(f"/links/{code}", headers={"X-User-Id": "bob"}).status_code == 404
+
+
+def test_invalid_ttl_is_rejected_without_side_effects(client):
+    for ttl in (0, -1, MAX_TTL_SECONDS + 1, 1.5, "60", True):
+        assert create_ttl(client, ttl).status_code == 422
+    assert store.links == {}
+    assert store.audit == []
+
+
+def test_max_ttl_is_accepted(client):
+    assert create_ttl(client, MAX_TTL_SECONDS).status_code == 201
+
+
+def test_null_ttl_means_never(client):
+    assert create_ttl(client, None).json()["expires_at"] is None
+
+
+def test_audit_never_holds_ttl_or_target(client):
+    create_ttl(client, 60)
+    assert "example.com" not in str(store.audit)
+    assert "ttl" not in str(store.audit)
