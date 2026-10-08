@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Does this repo still conform to the AI-native SDLC template?
 #
-#   tamper     the invariant layer matches the manifest it shipped with
+#   drift      the invariant layer matches the manifest it shipped with
 #   structure  the contracts the workflows depend on still hold
 #   wiring     consumers only: callers point at a tag, no leftover callables, no stub targets
 #   staleness  consumers only: warns when a newer tag exists. Never fails, because CI should not
 #              go red the moment github.com is slow; the scheduled sdlc-update job acts on it.
+#
+# The drift check compares the invariant layer against the manifest sitting next to it, so it
+# detects accidental edits, not deliberate ones: nothing authenticates the local manifest. The
+# tool that regenerates it is not shipped to consumers, so the obvious way to silence the check is
+# not one command away, but a determined edit can still do it. Treat a green result as "nobody has
+# drifted from the standard by accident".
 #
 # Run by ci.yml via `make template-check`, as its own step, independent of your test runner.
 set -uo pipefail
@@ -26,7 +32,7 @@ else
   echo "Checking conformance (no $VERSION_FILE, so this repo is the template itself)"
 fi
 
-# --- the invariant layer is untampered ---------------------------------------------------------
+# --- the invariant layer is unmodified -----------------------------------------------------------
 if [ ! -f "$MANIFEST" ]; then
   check fail "$MANIFEST exists (run: make manifest)"
 else
@@ -81,6 +87,17 @@ if [ -n "$version" ]; then
 
   ok_if '! grep -q "TODO: wire up" Makefile' \
     "make lint and make test are wired up (the template ships them failing on purpose)"
+
+  # Files that belong to the template's own upkeep, not to a project built from it.
+  for leftover in TODO.md .sdlc/scripts/make_manifest.sh; do
+    ok_if '[ ! -e "$leftover" ]' "$leftover is not carried over from the template"
+  done
+
+  # ONBOARDING.md is needed while adopting and stale afterwards. Wired-up lint and test is the
+  # signal that adoption finished.
+  if [ -f ONBOARDING.md ] && ! grep -q "TODO: wire up" Makefile; then
+    warn "adoption looks complete; ONBOARDING.md can be deleted"
+  fi
 fi
 
 # --- staleness, as a warning only --------------------------------------------------------------

@@ -96,6 +96,14 @@ cp -p "$src/$MANIFEST" "$MANIFEST"
 # Every pattern below is anchored to the start of the line, so the `#   uses: ...` example in a
 # caller's header comment is never mistaken for the real job key.
 if [ "$first_install" = 1 ]; then
+  # A repo made from the template inherits the template's own maintenance files. GitHub has no
+  # .templateignore, so they are removed here instead.
+  for leftover in TODO.md .sdlc/scripts/make_manifest.sh; do
+    [ -e "$leftover" ] || continue
+    rm -f "$leftover"
+    echo "  - $leftover (belongs to the template, not to this project)"
+  done
+
   # A repo made from the template calls the bodies through its own copies. Switch it over to
   # calling them by tag, and drop the copies: workflow_call never self-fires, so they are inert.
   for wf in .github/workflows/*.yml; do

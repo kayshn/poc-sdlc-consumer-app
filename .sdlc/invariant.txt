@@ -10,15 +10,20 @@
 # This file lists itself for the same reason.
 .sdlc/invariant.txt
 
-# The scripts the pipeline relies on being deterministic.
+# The scripts the pipeline relies on being deterministic. make_manifest.sh is deliberately absent:
+# it regenerates the manifest, so shipping it to a consumer would put "silence the drift check"
+# one command away from anyone who hits a red build.
 .sdlc/scripts/_sdlc_lib.sh
 .sdlc/scripts/check_flow.sh
 .sdlc/scripts/check_template.sh
-.sdlc/scripts/make_manifest.sh
 .sdlc/scripts/next_intent_number.sh
 .sdlc/scripts/open_pr.sh
 .sdlc/scripts/sdlc_update.sh
 .sdlc/scripts/trust_workspace.sh
+
+# Documentation of the standard travels with the standard. A team that held its own copy of this
+# would keep a diagram that quietly stopped being true the next time the loop changed.
+DEV-WORKFLOW.md
 
 # The eval harness, and the one case that proves the hooks actually block.
 .sdlc/evals/run_evals.sh
