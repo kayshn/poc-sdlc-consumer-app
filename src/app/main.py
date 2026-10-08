@@ -90,7 +90,7 @@ def create_link(body: CreateLink, user: str = Depends(require_user)) -> Link:
 
     code = secrets.token_urlsafe(CODE_BYTES)
     now = datetime.now(UTC)
-    expires_at = now + timedelta(seconds=body.ttl_seconds) if body.ttl_seconds else None
+    expires_at = now + timedelta(seconds=body.ttl_seconds) if body.ttl_seconds is not None else None
     link = Link(code=code, target=body.target, owner=user, created_at=now, expires_at=expires_at)
     store.links[code] = link
     store.record(user, "link.create", code)
