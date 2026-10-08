@@ -1,0 +1,44 @@
+# Invariant — part of the AI-native SDLC standard. Pulled by tag; do not edit in a consumer repo.
+# The triggers live in the caller, .github/workflows/deploy.yml.
+#
+# Stage 5: a green CI run on main deploys to production. Add required reviewers (release manager)
+# to the "production" environment to make this a human gate: the agent can prepare the release
+# but cannot pass the gate. The environment is declared here, in the standard, so a consumer
+# cannot quietly deploy without one.
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment that carries the release gate.
+        type: string
+        default: production
+      runner:
+        description: Runner label for the deploy job.
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  production:
+    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 20
+
+      - name: Claude drafts release notes
+        continue-on-error: true # nice-to-have; never block a deploy on it
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          git log --oneline -20 > recent.txt
+          claude -p "Read recent.txt (recent commits) and the .sdlc/intent/, .sdlc/specs/ and .sdlc/plans/ files they
+          touch. Write short release notes: what changed, user impact, risks, and rollback
+          (scripts/rollback.sh). Markdown, under 20 lines." \
+            --allowedTools "Read,Glob,Grep" >> "$GITHUB_STEP_SUMMARY"
+
+      - run: ./scripts/deploy.sh ${{ inputs.environment }}

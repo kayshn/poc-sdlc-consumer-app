@@ -1,0 +1,17 @@
+# Artefacts of the SDLC loop itself
+eval-results/
+.deploy/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# TEMPLATE: add this project's build output, dependency and cache directories
+# (node_modules/, target/, dist/, build/, .venv/, vendor/, ...).

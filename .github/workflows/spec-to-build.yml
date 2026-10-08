@@ -1,0 +1,74 @@
+# Stage 2 -> 3: an approved (merged, Status: approved) spec opens a Build issue for the owning engineer.
+# For an auto-approved spec (Status: approved (auto)) this issue is the human review point: it quotes the
+# spec's Areas of concern, and nothing is built until someone comments @claude.
+name: Spec to build
+
+on:
+  push:
+    branches: [main]
+    paths: [".sdlc/specs/**.md", "!.sdlc/specs/_TEMPLATE.md"]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Open a Build issue per newly approved spec
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            files=$(git diff-tree --no-commit-id --name-only --diff-filter=AM -r HEAD -- .sdlc/specs/)
+          else
+            files=$(git diff --name-only --diff-filter=AM "$BEFORE" HEAD -- .sdlc/specs/)
+          fi
+          for f in $files; do
+            slug=$(basename "$f" .md)
+            [ "$slug" = "_TEMPLATE" ] && continue
+            grep -q "Status: approved" "$f" || { echo "$f not approved yet; skipping"; continue; }
+            [ -f ".sdlc/plans/$slug.md" ] && { echo ".sdlc/plans/$slug.md exists; skipping"; continue; }
+            gh issue list --state all --search "in:title \"Build: $slug\"" --json number -q '.[].number' | grep -q . \
+              && { echo "Build issue for $slug exists; skipping"; continue; }
+
+            : > body.md
+            if grep -q "Status: approved (auto)" "$f"; then
+              concerns=$(awk '/^## Areas of concern/{on=1; next} /^## /{on=0} on' "$f")
+              cat >> body.md <<EOF
+          > [!IMPORTANT]
+          > **Auto-approved spec, not yet reviewed by a person.** Read \`.sdlc/specs/$slug.md\` before asking Claude to build.
+          > - **Accept:** carry on with the steps below. To resolve a concern first, edit the spec in a PR and merge it before building.
+          > - **Reject:** close this issue as *not planned* and open a PR that sets \`Status: rejected\` in the spec (or deletes it).
+
+          **Areas of concern (from the spec)**
+
+          ${concerns:-None listed.}
+
+          ---
+
+          EOF
+            fi
+
+            cat >> body.md <<EOF
+          Spec approved: \`.sdlc/specs/$slug.md\` (intent: \`.sdlc/intent/$slug.md\`).
+
+          **Engineer, build in CI**
+          1. Comment on this issue: *@claude read .sdlc/intent/$slug.md and .sdlc/specs/$slug.md, commit the implementation plan as .sdlc/plans/$slug.md, then implement it and open a PR that says Closes #<this issue>.*
+          2. Review \`.sdlc/plans/$slug.md\` in the PR alongside the code. If the plan is wrong, say so in a review comment and reply \`@claude fix this\`.
+          3. CI runs lint and tests; \`claude-review\` posts findings against \`.sdlc/REVIEW.md\`, the spec and the plan.
+
+          **Alternative: locally, in plan mode** (needs the \`claude\` CLI)
+          1. \`git pull && claude --worktree $slug --permission-mode plan\`
+          2. Prompt: *Read .sdlc/intent/$slug.md and .sdlc/specs/$slug.md and produce an implementation plan that names the files that change, the order of the work, and the tests that prove it.*
+          3. Interrogate the plan (what could break, riskiest step, alternatives). Commit the approved plan as \`.sdlc/plans/$slug.md\`.
+          4. Let Claude implement; run the \`verifier\` subagent; open a PR that says \`Closes #<this issue>\`.
+          EOF
+            gh issue create --title "Build: $slug" --body-file body.md
+          done

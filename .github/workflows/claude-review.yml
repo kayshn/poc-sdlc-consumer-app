@@ -1,0 +1,22 @@
+# Stage 5: every PR gets the same AI review passes defined in .sdlc/REVIEW.md.
+# Findings inform the human approver; branch protection still requires a code owner.
+#
+# Thin caller — yours to edit. The triggers below are repo-specific; the body is the standard and
+# lives in _claude-review.yml. In a consumer repo replace the `uses:` line with the pinned form:
+#   uses: kayshn/poc-sdlc-template/.github/workflows/_claude-review.yml@v1.0.0
+name: Claude review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+# A called workflow can only narrow these, never widen them, so they are declared here.
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  review:
+    uses: ./.github/workflows/_claude-review.yml
+    secrets: inherit

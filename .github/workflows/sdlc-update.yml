@@ -1,0 +1,27 @@
+# Keeps this project's copy of the SDLC standard current: opens a PR when a newer template tag
+# exists. The upgrade is reviewed and merged like any other change.
+#
+# Thin caller — yours to edit. The schedule below is repo-specific; the body is the standard and
+# lives in _sdlc-update.yml. In a consumer repo replace the `uses:` line with the pinned form:
+#   uses: kayshn/poc-sdlc-template/.github/workflows/_sdlc-update.yml@v1.0.0
+name: SDLC template update
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Template tag to move to. Blank means the newest.
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sdlc-update:
+    uses: ./.github/workflows/_sdlc-update.yml
+    with:
+      ref: ${{ inputs.ref }}
+    secrets: inherit

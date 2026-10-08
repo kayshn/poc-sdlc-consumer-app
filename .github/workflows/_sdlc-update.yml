@@ -1,0 +1,68 @@
+# Invariant — part of the AI-native SDLC standard. Pulled by tag; do not edit in a consumer repo.
+# The triggers live in the caller, .github/workflows/sdlc-update.yml.
+#
+# Dependabot for the SDLC standard itself: pull the invariant layer at a newer tag and open a PR,
+# so the upgrade goes through the same review, CI and evals as any other change. The agent is not
+# involved and no gate is skipped — a human still merges.
+name: SDLC template update (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Template tag to move to. Blank means the newest.
+        type: string
+        default: ""
+      runner:
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  update:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      # SDLC_BOT_TOKEN so the PR triggers CI and review, and because GITHUB_TOKEN may not push
+      # changes under .github/workflows/.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+
+      - name: Pull the invariant layer
+        id: update
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          if [ ! -f .sdlc/TEMPLATE_VERSION ]; then
+            echo "No .sdlc/TEMPLATE_VERSION: this repo is the template itself, nothing to update."
+            exit 0
+          fi
+          ./.sdlc/scripts/sdlc_update.sh ${REF:+"$REF"} | tee update.log
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$(sed -n 's/^version: *//p' .sdlc/TEMPLATE_VERSION)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open the upgrade PR
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+          VERSION: ${{ steps.update.outputs.version }}
+        run: |
+          SOURCE=$(sed -n 's/^source: *//p' .sdlc/TEMPLATE_VERSION)
+          {
+            echo "Moves the invariant layer of the SDLC template to [\`$VERSION\`](https://github.com/$SOURCE/releases/tag/$VERSION)."
+            echo
+            echo "Only files listed in \`.sdlc/invariant.txt\` changed, plus the pinned refs in the thin"
+            echo "caller workflows. Nothing this project owns was touched."
+            echo
+            echo '```'
+            grep -E '^\s*[-+~] ' update.log || true
+            echo '```'
+            echo
+            echo "\`ci / test\` runs \`make template-check\`, which re-verifies every hash against the new manifest."
+          } > pr-body.md
+          ./.sdlc/scripts/open_pr.sh "sdlc-update/$VERSION" "chore: SDLC template $VERSION" pr-body.md \
+            .sdlc .claude .github/workflows

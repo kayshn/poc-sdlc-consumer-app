@@ -1,0 +1,76 @@
+# The shape of the AI-native SDLC loop: the stages in order, the artefact each one commits to
+# hand over to the next, who produces it, what triggers it and who gates it.
+# Changes to this file go through PR review. See README.md for the walkthrough.
+#
+# Read by the pipeline: `gate.approval` on stages marked `configurable: true` (auto | manual).
+# Every other gate is enforced outside this file (`enforced_by`), so it is documented here, not
+# switched here. .sdlc/scripts/check_flow.sh keeps this file in step with the repo.
+version: 1
+
+actors:
+  human: a person
+  agent: Claude Code
+  pipeline: plain GitHub Actions steps, no model involved
+
+stages:
+  plan:
+    by: human # or the maintain stage, with nobody in the invocation path
+    produces: [.sdlc/intent/<slug>.md]
+    template: .sdlc/intent/_TEMPLATE.md
+    skills: [write-intent]
+    review: claude-review.yml
+    gate:
+      approval: manual
+      approver: code owner
+      enforced_by: branch protection on main
+
+  design:
+    trigger: { workflow: intent-to-spec.yml, on: merge of .sdlc/intent/<slug>.md }
+    by: agent
+    produces: [.sdlc/specs/<slug>.md]
+    template: .sdlc/specs/_TEMPLATE.md
+    skills: [write-spec, secure-api-review]
+    gate:
+      configurable: true
+      # auto:   the pipeline (not Claude) sets `Status: approved (auto)`, approves the spec PR and
+      #         merges it once `test` passes. The product owner reviews on the Build issue instead,
+      #         and can reject the spec there before anything is built.
+      # manual: the product owner resolves each area of concern, sets `Status: approved`, merges.
+      approval: auto
+      approver: product owner
+
+  build:
+    trigger: { workflow: spec-to-build.yml, on: merge of an approved spec }
+    start: manual # nothing is built until a person comments @claude on the Build issue
+    by: agent
+    produces: [.sdlc/plans/<slug>.md, <source and test directories>]
+    template: .sdlc/plans/_TEMPLATE.md
+    workflow: claude.yml
+    gate:
+      approval: manual
+      approver: code owner
+      enforced_by: branch protection on main
+
+  test:
+    trigger: { workflow: ci.yml, on: pull request }
+    by: pipeline
+    review: claude-review.yml # comments only, never approves
+    gate:
+      # ci.yml is a thin caller of _ci.yml, so the check reports as "<caller job> / <called job>".
+      check: ci / test
+      enforced_by: required status check on main
+
+  deploy:
+    trigger: { workflow: deploy.yml, on: green ci.yml run on main }
+    by: pipeline
+    gate:
+      approval: manual
+      approver: release manager
+      enforced_by: required reviewers on the production environment
+
+  maintain:
+    trigger: { workflow: monitor.yml, on: schedule }
+    by: agent
+    produces: [.sdlc/intent/<NNN>-monitor-*.md]
+    config: .sdlc/monitoring/bands.json
+    next: plan # closes the loop

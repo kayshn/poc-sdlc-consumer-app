@@ -1,0 +1,85 @@
+# Stage 6: closing the loop. Detection is a deterministic script; the agent is only invoked when a
+# control band is breached, and .sdlc/monitoring/bands.json decides what it may do. Its finding
+# re-enters the loop as an intent.md PR for the product owner / on-call to triage.
+name: Monitor
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      inject:
+        description: "Synthetic latest value to simulate a breach (e.g. 0.052 for 2σ, 0.2 for 3σ)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.detect.outputs.action }}
+      evidence: ${{ steps.detect.outputs.evidence }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: detect
+        env:
+          INJECT: ${{ inputs.inject }}
+        run: |
+          result=$(./scripts/detect.sh --bands .sdlc/monitoring/bands.json \
+            --metrics .sdlc/monitoring/metrics.json ${INJECT:+--inject "$INJECT"})
+          echo "$result" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "evidence=$result" >> "$GITHUB_OUTPUT"
+          echo "action=$(echo "$result" | jq -r .action)" >> "$GITHUB_OUTPUT"
+
+  respond:
+    needs: detect
+    if: needs.detect.outputs.action == 'diagnose' || needs.detect.outputs.action == 'propose'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 50
+          token: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+
+      - id: name
+        run: echo "slug=$(./.sdlc/scripts/next_intent_number.sh)-monitor-$(jq -r .metric <<< '${{ needs.detect.outputs.evidence }}' | tr _ -)-$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+
+      - name: Claude diagnoses (read-only) and writes intent.md
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            A control band was breached. Detector output:
+            ${{ needs.detect.outputs.evidence }}
+
+            Diagnose read-only: look at recent commits, the tests, .sdlc/monitoring/, and .sdlc/lessons/ for
+            prior incidents of the same class. Then use the write-intent skill to write your
+            diagnosis to .sdlc/intent/${{ steps.name.outputs.slug }}.md with
+            "Source: monitor <metric>" and the evidence under Problem.
+            Do not change any other file and do not commit.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Skill,Write,Bash(git log:*),Bash(git show:*)"
+
+      # 3-sigma tier only: the pre-approved runbook. Simulated here.
+      - name: Pre-approved runbook (rollback)
+        if: needs.detect.outputs.action == 'propose'
+        run: ./scripts/rollback.sh production | tee runbook.log
+
+      - name: Open intent PR for triage
+        env:
+          GH_TOKEN: ${{ secrets.SDLC_BOT_TOKEN || github.token }}
+        run: |
+          {
+            echo "Raised automatically by the monitor (run ${{ github.run_id }})."
+            echo
+            echo '```json'; echo '${{ needs.detect.outputs.evidence }}'; echo '```'
+            [ -f runbook.log ] && { echo; echo "**Runbook executed:**"; echo '```'; cat runbook.log; echo '```'; }
+            echo
+            echo "**On-call / service owner:** fix now (merge, which starts the spec stage), schedule, or dismiss (close; consider tuning .sdlc/monitoring/bands.json)."
+          } > pr-body.md
+          ./.sdlc/scripts/open_pr.sh "intent/${{ steps.name.outputs.slug }}" \
+            "intent: ${{ steps.name.outputs.slug }}" pr-body.md .sdlc/intent/

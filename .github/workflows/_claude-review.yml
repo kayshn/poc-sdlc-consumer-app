@@ -1,0 +1,44 @@
+# Invariant — part of the AI-native SDLC standard. Pulled by tag; do not edit in a consumer repo.
+# The triggers live in the caller, .github/workflows/claude-review.yml.
+#
+# Stage 5: every PR gets the same AI review passes defined in .sdlc/REVIEW.md.
+# Findings inform the human approver; branch protection still requires a code owner.
+name: Claude review (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner label for the review job.
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The build agent pushes to its own PR branch, so `synchronize` arrives as a bot.
+          allowed_bots: "github-actions"
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request following .sdlc/REVIEW.md exactly. The PR branch is checked out.
+            Identify the change's slug from the PR title, branch or changed files, and check the
+            diff against .sdlc/specs/<slug>.md and .sdlc/plans/<slug>.md (say so if either is missing).
+            Apply CLAUDE.md conventions and the secure-api-review skill.
+
+            Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) for
+            findings on specific lines, tagged with pass and severity.
+            Use `gh pr comment` once for the summary, ending with the REVIEW-TALLY line.
+            Only post GitHub comments; do not approve or request changes.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Skill,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"

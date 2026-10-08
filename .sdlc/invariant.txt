@@ -1,0 +1,31 @@
+# The invariant layer: the part of the AI-native SDLC template that a consuming project receives
+# rather than owns. `make manifest` hashes exactly these paths into .sdlc/MANIFEST.sha256, and
+# `make template-check` fails if any of them has drifted locally.
+#
+# Everything NOT listed here is yours to change: the Makefile bodies, CLAUDE.md, the _TEMPLATE.md
+# artefacts, flow.yaml, bands.json, scripts/deploy.sh, .claude/skills/ and .claude/settings.json.
+#
+# Entries are literal file or directory paths, never globs, so that deleting a file from the
+# standard is a visible edit to this list rather than a silently narrower glob.
+# This file lists itself for the same reason.
+.sdlc/invariant.txt
+
+# The scripts the pipeline relies on being deterministic.
+.sdlc/scripts/_sdlc_lib.sh
+.sdlc/scripts/check_flow.sh
+.sdlc/scripts/check_template.sh
+.sdlc/scripts/make_manifest.sh
+.sdlc/scripts/next_intent_number.sh
+.sdlc/scripts/open_pr.sh
+.sdlc/scripts/sdlc_update.sh
+
+# The eval harness, and the one case that proves the hooks actually block.
+.sdlc/evals/run_evals.sh
+.sdlc/evals/cases/intent-is-frozen-during-build
+
+# The hooks that stop the agent passing a gate. format-on-edit.sh is deliberately absent: it is a
+# formatter stub every project fills in. protect-paths.sh reads .sdlc/protected-paths.txt, so the
+# enforcement stays frozen while the paths it protects remain yours.
+.claude/hooks/_lib.sh
+.claude/hooks/production-gate.sh
+.claude/hooks/protect-paths.sh

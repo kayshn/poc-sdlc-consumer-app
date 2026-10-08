@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# .sdlc/flow.yaml declares the shape of the loop. Keep it true to the repo.
+# Run by ci.yml; run it yourself with `make flow-check`. Needs: yq (mikefarah), preinstalled on
+# GitHub's Ubuntu runners. This is deliberately independent of the project's own test runner.
+set -uo pipefail
+cd "$(dirname "$0")/../.."
+
+FLOW=.sdlc/flow.yaml
+WORKFLOWS=.github/workflows
+fail=0
+check() { if [ "$1" = ok ]; then echo "  ok   $2"; else echo "  FAIL $2"; fail=1; fi; }
+ok_if() { if eval "$1"; then check ok "$2"; else check fail "$2"; fi; }
+
+command -v yq >/dev/null || { echo "yq is not installed; cannot check $FLOW" >&2; exit 1; }
+
+echo "Checking $FLOW"
+
+stages=$(yq -r '.stages | keys | join(" ")' "$FLOW")
+ok_if '[ "$stages" = "plan design build test deploy maintain" ]' "six stages in order (got: $stages)"
+ok_if '[ "$(yq -r ".stages.maintain.next" "$FLOW")" = plan ]' "the loop closes back to plan"
+ok_if '[ "$(yq -r ".stages.build.start" "$FLOW")" = manual ]' "build never starts on its own"
+
+for stage in $stages; do
+  for key in '.trigger.workflow' '.workflow' '.review'; do
+    wf=$(yq -r ".stages.$stage$key // \"\"" "$FLOW")
+    [ -n "$wf" ] && ok_if '[ -f "$WORKFLOWS/$wf" ]' "$stage: $WORKFLOWS/$wf exists"
+  done
+  for key in template config; do
+    f=$(yq -r ".stages.$stage.$key // \"\"" "$FLOW")
+    [ -n "$f" ] && ok_if '[ -f "$f" ]' "$stage: $f exists"
+  done
+
+  [ "$(yq -r ".stages.$stage.gate // \"\"" "$FLOW")" = "" ] && continue
+  if [ "$(yq -r ".stages.$stage.gate.configurable // false" "$FLOW")" = true ]; then
+    approval=$(yq -r ".stages.$stage.gate.approval" "$FLOW")
+    ok_if '[ "$approval" = auto ] || [ "$approval" = manual ]' "$stage: gate approval is auto or manual"
+  else
+    ok_if '[ -n "$(yq -r ".stages.$stage.gate.enforced_by // \"\"" "$FLOW")" ]' \
+      "$stage: gate is configurable or says who enforces it"
+    ok_if '[ "$(yq -r ".stages.$stage.gate.approval // \"manual\"" "$FLOW")" = manual ]' \
+      "$stage: a gate the pipeline cannot automate is not marked auto"
+  fi
+done
+
+configurable=$(yq -r '[.stages | to_entries[] | select(.value.gate.configurable) | .key] | join(" ")' "$FLOW")
+ok_if '[ "$configurable" = design ]' "only the design gate is read by the pipeline (got: ${configurable:-none})"
+ok_if 'grep -q "stages.design.gate.approval" "$WORKFLOWS/intent-to-spec.yml"' \
+  "intent-to-spec.yml reads stages.design.gate.approval"
+
+[ $fail -eq 0 ] && echo "flow.yaml is in step with the repo."
+exit $fail

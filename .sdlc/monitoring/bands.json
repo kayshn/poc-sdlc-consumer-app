@@ -1,0 +1,11 @@
+{
+  "_comment": "Response tier per control band. Detection is deterministic (scripts/detect.sh); the tier decides what the agent may do. Changes to this file go through PR review.",
+  "metric": "ci_test_failure_rate",
+  "baseline_window": 30,
+  "rules": "western_electric",
+  "tiers": {
+    "1sigma": { "action": "log" },
+    "2sigma": { "action": "diagnose", "tools": "Read,Grep,Glob,Write(.sdlc/intent/**)" },
+    "3sigma": { "action": "propose", "routes": ["pull_request", "runbook:rollback-deploy"] }
+  }
+}

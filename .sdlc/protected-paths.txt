@@ -1,0 +1,5 @@
+# Path prefixes the agent may not edit while fixing a bug (SDLC_FIX_MODE=1): fix the code, not the
+# test. Read by .claude/hooks/protect-paths.sh, which is invariant so that the rule cannot be
+# weakened by editing the hook. One prefix per line; `#` comments and blank lines are ignored.
+# Defaults to tests/ if this file is missing.
+tests/

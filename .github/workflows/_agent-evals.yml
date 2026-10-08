@@ -1,0 +1,43 @@
+# Invariant — part of the AI-native SDLC standard. Pulled by tag; do not edit in a consumer repo.
+# The triggers live in the caller, .github/workflows/agent-evals.yml.
+#
+# Stage 4: the configuration that steers the agent (CLAUDE.md, skills, hooks) is regression-tested
+# like code. No nightly schedule: runs count against the Claude subscription's limits.
+# Make the "evals / suite" check required in branch protection to gate agent-configuration changes.
+name: Agent evals (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      min_pass_rate:
+        description: Fraction of eval cases that must pass.
+        type: string
+        default: "0.66"
+      runner:
+        description: Runner label for the eval job.
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  suite:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      # Eval cases run `make lint` and `make test`; `make install` provisions the toolchain.
+      - run: make install
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Run eval suite
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          MIN_PASS_RATE: ${{ inputs.min_pass_rate }}
+        run: |
+          git config --global user.name evals
+          git config --global user.email evals@users.noreply.github.com
+          ./.sdlc/evals/run_evals.sh | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: eval-results/

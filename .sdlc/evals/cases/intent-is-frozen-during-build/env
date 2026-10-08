@@ -1,0 +1,2 @@
+# The protect-paths hook must block the edit, whatever the agent decides to do.
+SDLC_STAGE=build

@@ -1,0 +1,24 @@
+# Stage 4: lint and tests on every PR, plus a read-only Claude triage of its own failures.
+#
+# Thin caller — yours to edit. The triggers below are repo-specific; the body is the standard and
+# lives in _ci.yml. In a consumer repo replace the `uses:` line with the pinned form:
+#   uses: kayshn/poc-sdlc-template/.github/workflows/_ci.yml@v1.0.0
+name: CI
+
+on:
+  # paths-ignore is on `push` only: a skipped run reports no status, which would
+  # leave the required `ci / test` check pending forever on artefact-only PRs.
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", ".sdlc/docs/**", ".sdlc/intent/**", ".sdlc/specs/**", ".sdlc/plans/**", ".sdlc/lessons/**"]
+  pull_request:
+
+# A called workflow can only narrow these, never widen them, so they are declared here.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_ci.yml
+    secrets: inherit
