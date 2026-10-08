@@ -4,15 +4,22 @@ description: Apply the API security standard. Use whenever creating or modifying
 ---
 # Secure API review
 
-<!-- TEMPLATE: rewrite each rule in terms of this project's own helpers, types and function names.
-     A rule that names the actual code ("every endpoint depends on require_user") is enforceable;
-     a generic one is not. Delete this skill entirely if the project has no API. -->
+When you create, change, specify or review an API endpoint in `src/app/main.py`:
 
-When you create, change, specify or review an API endpoint:
-1. Authentication: every endpoint goes through the project's auth dependency; no anonymous routes except an unauthenticated health check.
-2. Input validation: request bodies are parsed into a declared schema type and unknown fields are rejected.
-3. Audit: every state-changing endpoint records an audit event (actor, action, entity).
-4. Ownership: every read and write is scoped to the authenticated caller's id; another user's record is a 404, not a 403.
-5. Data classification: user-supplied content must never appear in logs or error messages. Use explicit response models so internal fields are never returned.
+1. **Authentication.** Every route takes `user: str = Depends(require_user)`. The only anonymous
+   routes are `GET /health` and `GET /{code}`, and adding a third needs a line in the spec saying why.
+2. **Input validation.** Request bodies are a `BaseModel` with `model_config = ConfigDict(extra="forbid")`.
+   Never read a field straight off the request.
+3. **Redirect targets.** Any URL that will be returned in a `Location` header is parsed with
+   `urlparse` and rejected unless its scheme is in `ALLOWED_SCHEMES` and it has a `netloc`.
+   `javascript:`, `data:` and scheme-relative targets are open-redirect holes.
+4. **Audit.** Every state-changing route calls `store.record(user, "<entity>.<action>", code)`.
+   Pass the code, never the target.
+5. **Ownership.** Reads and writes filter on `link.owner == user`. Another user's link is a **404,
+   not a 403** — a 403 confirms the code exists.
+6. **Codes are secrets.** Generate them with `secrets.token_urlsafe`, never a counter, a hash of the
+   target, or anything guessable. `GET /{code}` is unauthenticated, so the code is the only control.
+7. **Data classification.** A target URL is user content: it must never reach a log line, an error
+   message or an audit entry. Return `LinkOut`, never the `Link` dataclass, so `owner` stays internal.
 
 Run `make test` and include its output in your summary.
