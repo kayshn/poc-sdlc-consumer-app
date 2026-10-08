@@ -18,5 +18,5 @@ permissions:
 
 jobs:
   review:
-    uses: ./.github/workflows/_claude-review.yml
+    uses: kayshn/poc-sdlc-template/.github/workflows/_claude-review.yml@v1.1.0
     secrets: inherit
