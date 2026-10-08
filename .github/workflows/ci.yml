@@ -20,5 +20,5 @@ permissions:
 
 jobs:
   ci:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_ci.yml@v1.4.1
+    uses: kayshn/poc-sdlc-template/.github/workflows/_ci.yml@v1.4.2
     secrets: inherit

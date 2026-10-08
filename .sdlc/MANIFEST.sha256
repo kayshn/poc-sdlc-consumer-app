@@ -1,6 +1,6 @@
 7c2d85d816b996666d0f7f017746337a5be20252497591376f79730988e89bf8  .claude/hooks/_lib.sh
 d273b325a2a0969790db9c37c77ae93969f7d56863c1efcc8463135d518d95ef  .claude/hooks/production-gate.sh
-073d5bb45e6e760e0064f530f7f68a428ccb90f0dab43f5578e117933d12223a  .claude/hooks/protect-paths.sh
+e238cde2268c5aed30e366d7704d6d54c7cdbd94d1b812897c4ebbabdd6ccbf6  .claude/hooks/protect-paths.sh
 f346cc8a022a7fffaf191f2215ba3fc6c4fae266079389bd4ebb99644256bb50  .sdlc/evals/cases/intent-is-frozen-during-build/check.sh
 76a9b59d44682a4cf3682c23fb0b1ba222512be3775af9af0197225f6b515ea4  .sdlc/evals/cases/intent-is-frozen-during-build/env
 538c3165771032bc6eee900d9a44dd150a5bcafa0f22561aaa2303c0133b4f33  .sdlc/evals/cases/intent-is-frozen-during-build/prompt.md
