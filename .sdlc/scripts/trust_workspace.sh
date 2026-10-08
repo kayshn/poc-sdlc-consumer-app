@@ -5,15 +5,20 @@
 # enforcing while everything still reports success.
 #
 # Run this before invoking the agent headlessly. Interactively, the trust dialog does the same job.
-# Usage: trust_workspace.sh [dir]   (default: the current directory)
+# Usage: trust_workspace.sh [dir ...]   (default: the current directory)
+#
+# Pass every directory the agent might resolve as its project. For a git worktree that means the
+# main repository as well: Claude Code keys trust on the repository, not on the linked worktree.
 set -euo pipefail
-dir=$(cd "${1:-.}" && pwd)
 config="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
 
-python3 - "$config" "$dir" <<'PY'
+dirs=()
+for d in "${@:-.}"; do dirs+=("$(cd "$d" && pwd)"); done
+
+python3 - "$config" "${dirs[@]}" <<'PY'
 import json, os, sys
 
-path, project = sys.argv[1], sys.argv[2]
+path, projects = sys.argv[1], sys.argv[2:]
 try:
     with open(path) as f:
         data = json.load(f)
@@ -21,10 +26,12 @@ except (OSError, ValueError):
     data = {}
 if not isinstance(data, dict):
     data = {}
-data.setdefault("projects", {}).setdefault(project, {})["hasTrustDialogAccepted"] = True
+for project in projects:
+    data.setdefault("projects", {}).setdefault(project, {})["hasTrustDialogAccepted"] = True
 os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
 PY
 
-echo "Trusted $dir for Claude Code (hooks and permissions from .claude/settings.json will apply)."
+printf 'Trusted for Claude Code (.claude/settings.json hooks and permissions will apply):\n'
+printf '  %s\n' "${dirs[@]}"

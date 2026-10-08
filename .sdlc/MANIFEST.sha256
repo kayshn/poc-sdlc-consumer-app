@@ -4,7 +4,7 @@ d273b325a2a0969790db9c37c77ae93969f7d56863c1efcc8463135d518d95ef  .claude/hooks/
 f346cc8a022a7fffaf191f2215ba3fc6c4fae266079389bd4ebb99644256bb50  .sdlc/evals/cases/intent-is-frozen-during-build/check.sh
 76a9b59d44682a4cf3682c23fb0b1ba222512be3775af9af0197225f6b515ea4  .sdlc/evals/cases/intent-is-frozen-during-build/env
 538c3165771032bc6eee900d9a44dd150a5bcafa0f22561aaa2303c0133b4f33  .sdlc/evals/cases/intent-is-frozen-during-build/prompt.md
-65cbec460ecce768936e42c619626a651590b05115892d3ca32d99f5fd2a9242  .sdlc/evals/run_evals.sh
+e4061ef907bacdc51d76309e8545a640e96c36b94cdc09f04aa6dc746516b7c1  .sdlc/evals/run_evals.sh
 a770abe5bfa647b98849fd02a9b3977b6e45df71354592bc5a68f1b970016388  .sdlc/invariant.txt
 9ca5fd8fabe6a4acd19502b3c06484c39a5bcc701b5e8b7fdb066fe985bb5a0d  .sdlc/scripts/_sdlc_lib.sh
 94f1df6e636a20b2d90fbc07e233b475dbff52e0c6d8502c5c6816ed77213fb1  .sdlc/scripts/check_flow.sh
@@ -13,4 +13,4 @@ a794674cd6168a1e0020bbfe0ab9ba902032e8f8b2b1777e13cc88dfaa2c594e  .sdlc/scripts/
 3f477f410ca6c15bac47e885738985088683739eadc4c16c773b006b72fae584  .sdlc/scripts/next_intent_number.sh
 322f3f6b91da2b91fff8961047a3927c14f274215db9cf3866f16efbe4217499  .sdlc/scripts/open_pr.sh
 067f00567635139f96696bce72f29c70924d8e38719ad14cf647f5eee2fc1131  .sdlc/scripts/sdlc_update.sh
-d0eea97e68fde3b09146ba7fd4ebbd7f7f1c694c3ff1ad59b47560a271af3848  .sdlc/scripts/trust_workspace.sh
+eb8e83aba489c694f3d122d3b94908b7bfad674b29081b75ad060af4567d4b3b  .sdlc/scripts/trust_workspace.sh

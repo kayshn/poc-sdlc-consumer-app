@@ -20,5 +20,5 @@ permissions:
 jobs:
   deploy:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    uses: kayshn/poc-sdlc-template/.github/workflows/_deploy.yml@v1.4.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_deploy.yml@v1.4.1
     secrets: inherit
