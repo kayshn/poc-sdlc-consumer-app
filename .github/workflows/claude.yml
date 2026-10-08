@@ -38,6 +38,10 @@ jobs:
       # so the agent can run lint and tests.
       - run: make install
 
+      # A fresh checkout is untrusted, which makes Claude Code ignore .claude/settings.json and
+      # with it the hooks that freeze .sdlc/intent/ and .sdlc/specs/ during a build.
+      - run: ./.sdlc/scripts/trust_workspace.sh "$GITHUB_WORKSPACE"
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

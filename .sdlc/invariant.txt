@@ -18,6 +18,7 @@
 .sdlc/scripts/next_intent_number.sh
 .sdlc/scripts/open_pr.sh
 .sdlc/scripts/sdlc_update.sh
+.sdlc/scripts/trust_workspace.sh
 
 # The eval harness, and the one case that proves the hooks actually block.
 .sdlc/evals/run_evals.sh
