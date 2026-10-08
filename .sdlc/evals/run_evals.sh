@@ -8,6 +8,10 @@
 #   setup.sh   optional, runs before the agent (e.g. introduce a bug)
 #   env        optional KEY=VALUE lines exported for the agent run (e.g. SDLC_FIX_MODE=1)
 # Folders whose name starts with "_" are skipped.
+#
+# Each run writes <case>.json (the result), <case>.check.log and <case>.debug.log to EVAL_OUT.
+# The debug log is where hook resolution shows up: a case that fails because a hook did not fire
+# is indistinguishable from one that fails on its own merits without it.
 set -uo pipefail
 ROOT=$(git rev-parse --show-toplevel)
 MIN_PASS_RATE=${MIN_PASS_RATE:-0.66}
@@ -60,6 +64,7 @@ for case in "$CASES"/*/; do
       --permission-mode acceptEdits \
       --allowedTools "Read,Edit,Write,Glob,Grep,Bash(make test),Bash(make lint),Bash(make format)" \
       --max-turns 30 \
+      --debug-file "$OUT/$name.debug.log" \
       --output-format json > "$OUT/$name.json"
   )
 
