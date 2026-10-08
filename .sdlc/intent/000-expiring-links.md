@@ -1,5 +1,5 @@
 # Intent: Expiring links
-Author: kayshn (platform). Status: draft. Source: idea
+Author: kayshn (platform). Status: accepted. Source: idea
 
 ## Problem
 A short link lives forever. Someone who shares a link to a time-limited resource — a draft
