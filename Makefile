@@ -1,23 +1,28 @@
 # The workflows call these targets by name: install, lint, test, flow-check, template-check,
 # evals, detect. Keep the names; replace the bodies with whatever this project's stack needs.
-# `lint` and `test` deliberately fail until you wire them up — a green check that ran nothing is
-# worse than a red one.
 .PHONY: install lint test format run flow-check template-check evals detect manifest sdlc-update
 
+VENV := .venv
+BIN := $(VENV)/bin
+
 install:
-	@echo "TODO: install dependencies (npm ci / mvn verify -DskipTests / go mod download / ...)"
+	python3 -m venv $(VENV)
+	$(BIN)/pip install -q --upgrade pip
+	$(BIN)/pip install -q -r requirements.txt -r requirements-dev.txt
 
 lint:
-	@echo "TODO: wire up the linter for this project" && exit 1
+	$(BIN)/ruff check src tests
+	$(BIN)/ruff format --check src tests
 
 test:
-	@echo "TODO: wire up the test suite for this project" && exit 1
+	$(BIN)/pytest
 
 format:
-	@echo "TODO: wire up the formatter for this project"
+	$(BIN)/ruff format src tests
+	$(BIN)/ruff check --fix src tests
 
 run:
-	@echo "TODO: start the application"
+	$(BIN)/uvicorn app.main:app --reload --app-dir src
 
 # Nothing below this line is stack-specific — leave it alone.
 

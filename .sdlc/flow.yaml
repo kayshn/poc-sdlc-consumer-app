@@ -43,7 +43,7 @@ stages:
     trigger: { workflow: spec-to-build.yml, on: merge of an approved spec }
     start: manual # nothing is built until a person comments @claude on the Build issue
     by: agent
-    produces: [.sdlc/plans/<slug>.md, <source and test directories>]
+    produces: [.sdlc/plans/<slug>.md, src/app/, tests/]
     template: .sdlc/plans/_TEMPLATE.md
     workflow: claude.yml
     gate:

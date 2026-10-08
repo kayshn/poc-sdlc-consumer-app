@@ -15,3 +15,8 @@ eval-results/
 
 # TEMPLATE: add this project's build output, dependency and cache directories
 # (node_modules/, target/, dist/, build/, .venv/, vendor/, ...).
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
