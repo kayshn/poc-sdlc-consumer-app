@@ -23,7 +23,7 @@ process.stdin.on("data", c => s += c).on("end", () => {
   process.stdout.write(typeof d === "string" ? d : "")
 })' "$path"
   else
-    echo "Hook warning: no jq, python3 or node found, so the SDLC hooks cannot read their input and are not enforcing anything." >&2
-    printf ''
+    echo "Hook error: no jq, python3 or node found, so the SDLC hooks cannot read their input." >&2
+    return 1
   fi
 }

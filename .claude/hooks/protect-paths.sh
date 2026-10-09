@@ -4,8 +4,10 @@
 # .sdlc/protected-paths.txt, so a project can retarget the rule without being able to soften it.
 source "$(dirname "$0")/_lib.sh"
 payload=$(cat)
-path=$(field "$payload" tool_input.file_path)
-[ -n "$path" ] || exit 0
+if ! path=$(field "$payload" tool_input.file_path) || [ -z "$path" ]; then
+  echo "Blocked: the SDLC hook could not read tool_input.file_path from its payload." >&2
+  exit 2
+fi
 
 # The tool reports an absolute or a project-relative path, and CLAUDE_PROJECT_DIR is not reliably
 # the directory the file sits under — in a git worktree it is the repository. Stripping it as a

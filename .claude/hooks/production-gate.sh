@@ -2,7 +2,10 @@
 # PreToolUse(Bash): production deploys require a named release authorisation.
 source "$(dirname "$0")/_lib.sh"
 payload=$(cat)
-cmd=$(field "$payload" tool_input.command)
+if ! cmd=$(field "$payload" tool_input.command) || [ -z "$cmd" ]; then
+  echo "Blocked: the SDLC hook could not read tool_input.command from its payload." >&2
+  exit 2
+fi
 # Match an actual deploy invocation targeting prod (e.g. `scripts/deploy.sh production`, `deploy --env prod`),
 # not any command that merely mentions both words.
 if [[ "$cmd" =~ deploy(\.sh)?[[:space:]]+(--env[=[:space:]])?prod(uction)?([[:space:]]|$) && -z "${RELEASE_APPROVAL:-}" ]]; then

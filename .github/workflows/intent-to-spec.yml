@@ -28,7 +28,7 @@ concurrency: intent-to-spec
 
 jobs:
   spec:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_intent-to-spec.yml@v3.0.1
+    uses: kayshn/poc-sdlc-template/.github/workflows/_intent-to-spec.yml@v3.0.2
     with:
       slug: ${{ inputs.slug }}
     secrets: inherit

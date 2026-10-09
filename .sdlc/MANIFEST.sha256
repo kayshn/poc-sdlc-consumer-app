@@ -1,8 +1,8 @@
 2365e2bd5a3f9881bd10826674df0f73b5cb39ec8281c643dc241bb70cae129d  .claude/agents/verifier.md
-7c2d85d816b996666d0f7f017746337a5be20252497591376f79730988e89bf8  .claude/hooks/_lib.sh
+8b9d5486882959dac2ccd6a12f3fbef76eb7b300bbab948761ef28e3f95beeea  .claude/hooks/_lib.sh
 a592e848f5a481eb69be454d98b14be0b155caceb6b5db53591b3b1f1db094a6  .claude/hooks/format-on-edit.sh
-d273b325a2a0969790db9c37c77ae93969f7d56863c1efcc8463135d518d95ef  .claude/hooks/production-gate.sh
-e238cde2268c5aed30e366d7704d6d54c7cdbd94d1b812897c4ebbabdd6ccbf6  .claude/hooks/protect-paths.sh
+1cc8515891e52dbb9535b0e6f47415470ea62181d730845688c967610da56db4  .claude/hooks/production-gate.sh
+400e14173089667e9a5a6ef2792b3ff8dd71c3059e918344892349c31ca25b14  .claude/hooks/protect-paths.sh
 8f84dada1325ca9b69e49a65e4c24dc0640e6ebbae645411669bfdbe998d4e77  .claude/skills/write-intent/SKILL.md
 7c0e6b613c335eaed0b03c56befe303712a632dd0c89030f70c54a2876714fee  .claude/skills/write-spec/SKILL.md
 8c8c3024c81a9b7f3593bebc5e9b30c9255af5163f90f5fb962aad9d793d9245  .sdlc/MIGRATIONS

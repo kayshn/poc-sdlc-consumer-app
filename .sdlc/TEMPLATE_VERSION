@@ -1,5 +1,5 @@
 # Written by .sdlc/upstream/scripts/sdlc_update.sh. The invariant layer below this project's own
 # files came from the tag named here. Run `make sdlc-update` to move to a newer one.
 source: kayshn/poc-sdlc-template
-version: v3.0.1
+version: v3.0.2
 installed: 2026-10-09
