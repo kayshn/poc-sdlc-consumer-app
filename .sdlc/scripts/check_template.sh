@@ -93,10 +93,10 @@ if [ -n "$version" ]; then
     ok_if '[ ! -e "$leftover" ]' "$leftover is not carried over from the template"
   done
 
-  # ONBOARDING.md is needed while adopting and stale afterwards. Wired-up lint and test is the
-  # signal that adoption finished.
-  if [ -f ONBOARDING.md ] && ! grep -q "TODO: wire up" Makefile; then
-    warn "adoption looks complete; ONBOARDING.md can be deleted"
+  # ONBOARDING.md was merged into SDLC-GUIDE.md. A consumer that predates the merge still has its
+  # own copy, which sdlc_update.sh cannot remove because the project owns it.
+  if [ -f ONBOARDING.md ]; then
+    warn "ONBOARDING.md was merged into SDLC-GUIDE.md and can be deleted"
   fi
 fi
 
