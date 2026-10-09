@@ -31,7 +31,10 @@ the system Python.
 - Every route takes `user: str = Depends(require_user)`. The only anonymous routes are
   `GET /health` and `GET /{code}`.
 - Request bodies are a `BaseModel` with `model_config = ConfigDict(extra="forbid")`.
-- Every state-changing route calls `store.record(user, "<entity>.<action>", code)`.
+- Every state-changing route by an authenticated caller calls `store.record(user, "<entity>.<action>", code)`.
+  `GET /{code}` is the one exemption: it is anonymous, so there is no actor to record, and the intent
+  for `002-link-follow-count` forbids counting follows becoming a follow log. It increments a bare
+  counter through `store.count_follow` instead.
 - Users only ever see their own links: filter on `link.owner == user`, and return **404, not 403**,
   for someone else's — a 403 confirms the code exists.
 - A target URL is user content. It must never appear in a log line, an error message or an audit

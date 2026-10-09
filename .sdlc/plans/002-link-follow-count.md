@@ -21,6 +21,8 @@ does not apply: no new dependency.
 ## Risks
 - Audit rule 4 / CLAUDE.md say state-changing routes call `store.record`. The spec follows the
   intent and does not audit follows. Known, deliberate non-conformance; the policy owner must confirm.
+  **Resolved in PR #21:** the policy owner confirmed the exemption and amended rule 4, the CLAUDE.md
+  convention and `.sdlc/REVIEW.md` to name it. The code is conformant as written; no behaviour changed.
 - Anonymous callers can inflate counts; bots and prefetchers are counted. Rate limiting out of scope.
 - Pre-existing: `follow()` does not re-validate the target against `ALLOWED_SCHEMES`. Not changed here.
 - A follow racing a delete may increment a link already removed from the store; the count is discarded
