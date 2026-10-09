@@ -4,6 +4,8 @@
       "Bash(make test)",
       "Bash(make lint)",
       "Bash(make format)",
+      "Bash(make flow-check)",
+      "Bash(make template-check)",
       "Bash(git status)",
       "Bash(git diff *)",
       "Bash(git log *)"
