@@ -22,8 +22,8 @@
 .sdlc/scripts/trust_workspace.sh
 
 # Documentation of the standard travels with the standard. A team that held its own copy of this
-# would keep a diagram that quietly stopped being true the next time the loop changed.
-DEV-WORKFLOW.md
+# would keep a guide that quietly stopped being true the next time the loop changed.
+SDLC-GUIDE.md
 
 # The eval harness, and the one case that proves the hooks actually block.
 .sdlc/evals/run_evals.sh

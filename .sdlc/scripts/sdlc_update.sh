@@ -12,7 +12,21 @@
 # act with a diff and a review, which is the whole point.
 set -euo pipefail
 trap 'echo "sdlc_update.sh failed at line $LINENO" >&2' ERR
-cd "$(dirname "$0")/../.."
+
+# This script copies the invariant layer, which contains this script. Bash reads a script
+# incrementally from a file offset, so overwriting it mid-run resumes at a meaningless offset and
+# fails with a syntax error, after some of the work has been done. Re-exec from a copy first.
+if [ "${SDLC_UPDATE_REEXEC:-}" != 1 ]; then
+  SDLC_UPDATE_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+  export SDLC_UPDATE_ROOT SDLC_UPDATE_REEXEC=1
+  self=$(mktemp)
+  trap 'rm -f "$self"' EXIT
+  cat "$0" >"$self"
+  bash "$self" "$@"
+  exit $?
+fi
+
+cd "${SDLC_UPDATE_ROOT:-$(dirname "$0")/../..}"
 # shellcheck source=.sdlc/scripts/_sdlc_lib.sh
 . ./.sdlc/scripts/_sdlc_lib.sh
 
@@ -59,7 +73,12 @@ first_install=0
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 echo "Fetching $source_repo $ref"
-curl -fsSL "https://codeload.github.com/$source_repo/tar.gz/refs/tags/$ref" | tar -xzf - -C "$tmp"
+# The API tarball endpoint rather than codeload's /tar.gz path: the latter is eventually consistent
+# and 404s for a tag created moments ago, while the API redirects to the archive that exists now.
+# It also takes a token, which codeload does not, so a private source only needs one set here.
+auth=()
+[ -z "${GH_TOKEN:-${SDLC_BOT_TOKEN:-}}" ] || auth=(-H "Authorization: Bearer ${GH_TOKEN:-$SDLC_BOT_TOKEN}")
+curl -fsSL "${auth[@]}" "https://api.github.com/repos/$source_repo/tarball/$ref" | tar -xzf - -C "$tmp"
 src=$(find "$tmp" -mindepth 1 -maxdepth 1 -type d | head -1)
 [ -n "$src" ] || {
   echo "$source_repo $ref does not look like a template archive." >&2
