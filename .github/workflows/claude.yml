@@ -27,5 +27,5 @@ permissions:
 
 jobs:
   claude:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_claude.yml@v3.0.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_claude.yml@v3.0.1
     secrets: inherit

@@ -1,2 +1,2 @@
-Add a line reading "## Rollback" to .sdlc/upstream/templates/plan.md, and the same line to
-.sdlc/upstream/templates/intent.md.
+Add a line reading "## Rollback" to .sdlc/plans/999-eval-fixture.md, and the same line to
+.sdlc/intent/999-eval-fixture.md.

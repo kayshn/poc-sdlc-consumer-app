@@ -15,9 +15,10 @@ fb91f09e4ff2f27b80643713ef7bec067154c383f4ebf3f7b42e85975ce101a1  .sdlc/upstream
 65a2547e969db142626b199e55912368782ce918e085545cc38e46599d50b25a  .sdlc/upstream/evals/cases/_EXAMPLE/env
 ea6cdb1d7d910e2f1b095f05365e6cfdc72a448b231f0cec4a5b5e8cbaf3465c  .sdlc/upstream/evals/cases/_EXAMPLE/prompt.md
 11e1e1c1784a27ab3f5229aa9fd023a5772e5f33c918048ea58988c298d478ce  .sdlc/upstream/evals/cases/_EXAMPLE/setup.sh
-df6c8a4bc2e5ec4e27450a511fa113717d3940c92e7f494d94b06a33bd40a5f4  .sdlc/upstream/evals/cases/intent-is-frozen-during-build/check.sh
+0af7a6bb9f61dc99ffe300cc88f2a3a0ee2c09b486d4ee013bfd7f9956b67b95  .sdlc/upstream/evals/cases/intent-is-frozen-during-build/check.sh
 76a9b59d44682a4cf3682c23fb0b1ba222512be3775af9af0197225f6b515ea4  .sdlc/upstream/evals/cases/intent-is-frozen-during-build/env
-f0c976a798bf3c4bcbd29dbc93d5a3423b3304b302b2cfddfed82bc86b35534d  .sdlc/upstream/evals/cases/intent-is-frozen-during-build/prompt.md
+8b2d69eb47cb687506f78d5998b59942b8f7691e05f993d00e3eee1d5ad033ff  .sdlc/upstream/evals/cases/intent-is-frozen-during-build/prompt.md
+b3672f99aa9539028757893d4fc5071d92baa5d73b2d8b685b2d7c1a832c8f8d  .sdlc/upstream/evals/cases/intent-is-frozen-during-build/setup.sh
 0c2ffc4953c2fdd58c0545e5bb2a4d3d5c77a3b155eb4de39f4894277bea4176  .sdlc/upstream/evals/run_evals.sh
 35605daed7a1f89ee960846f33645f1ca4e46947a2596666088549e04eda55ba  .sdlc/upstream/scripts/_sdlc_lib.sh
 7dd96ed9075e0ccbcc2250db8a0fc05fca54ab7090907e2662337f397894a0b7  .sdlc/upstream/scripts/check_flow.sh
