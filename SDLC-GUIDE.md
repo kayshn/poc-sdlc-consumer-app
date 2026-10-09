@@ -4,7 +4,7 @@ How one change travels from an idea to production, how to work in a repository t
 loop, and how to adopt it in a new one. `README.md` covers what the loop is and why it is shaped
 this way.
 
-Adopting the loop commits a project to three things:
+Adopting the loop commits a project to four things:
 
 - **The files named in `.sdlc/invariant.txt` stop being the project's.** `ci / test` fails if they
   are edited locally. They change by proposing a change upstream.
@@ -12,6 +12,9 @@ Adopting the loop commits a project to three things:
   It goes through the project's own CI and review. Merging it is a decision, not an obligation.
 - **Every gate stays human.** The agent writes artefacts and findings. It never approves, merges or
   releases. The single automatic approval is the spec, and the pipeline grants it, not the agent.
+- **The agent is held to published rules.** `.sdlc/standards/engineering-guardrails.md` arrives with
+  the standard and binds every change the agent proposes. The project points `CLAUDE.md` at it once
+  and reviews against it; the rules themselves are not the project's to soften.
 
 ---
 
@@ -163,11 +166,13 @@ produces plausible noise.
 
 | File | Do |
 |---|---|
-| `CLAUDE.md` | Fill in every `<...>`. *Conventions* and *Things the agent gets wrong* are what steer it — name real symbols, not principles. Keep it short; a long file is a file the agent skims |
-| `.sdlc/REVIEW.md` | Rewrite the *Security* bullet for the project's real risks. Keep the three passes, the severities and the `REVIEW-TALLY` line — the pipeline parses them |
+| `CLAUDE.md` | Fill in every `<...>`. *Conventions* and *Things the agent gets wrong* are what steer it — name real symbols, not principles. Keep it short; a long file is a file the agent skims. Leave the `@.sdlc/standards/engineering-guardrails.md` line alone: it is how the rules reach every session, and `make template-check` fails without it |
+| `.sdlc/REVIEW.md` | Rewrite the *Security* bullet for the project's real risks. Keep the four passes, the severities and the `REVIEW-TALLY` line — the pipeline parses them |
+| `.sdlc/standards/project-guardrails.md` | Optional, and the project's own. Rules specific to this stack, alongside the invariant `engineering-guardrails.md`. Import it from `CLAUDE.md` the same way |
 | `.claude/skills/secure-api-review/SKILL.md` | Rewrite in terms of the project's own helpers and types, or delete it and its references in `CLAUDE.md`, `.sdlc/REVIEW.md`, `claude-review.yml`, `flow.yaml` and `write-spec`. Add one skill per policy to enforce at design time |
 | `.sdlc/protected-paths.txt` | Point at the test directory. The hook enforcing it is invariant, so this file is the only place the rule can be retargeted |
-| `.sdlc/flow.yaml` | Set `stages.build.produces` to the real source and test directories |
+| `.sdlc/architecture/container.md` | Replace the stub with this system at container level. Every spec from then on either amends it or says `No architectural change.`, and `make flow-check` fails a spec that says neither |
+| `.sdlc/flow.yaml` | Set `stages.build.produces` to the real source and test directories. `stages.design.diagram` names the high-level diagram and must point at a file that exists |
 | `.claude/hooks/format-on-edit.sh` | Add the formatter for the project's file types. It must never block |
 | `.claude/agents/verifier.md` | Say how to exercise the project's behaviour directly, not only through the suite |
 
@@ -256,6 +261,10 @@ especially risky either, but `check_template.sh` warns on every run until the pr
 |---|---|
 | `the invariant layer matches the manifest` fails | A file in `.sdlc/invariant.txt` was edited. `make sdlc-update` restores it; if the change was wanted, propose it upstream |
 | `ci.yml calls the standard by ref` fails | A caller was reverted to `uses: ./...`, or a local `_*.yml` came back |
+| `CLAUDE.md imports the engineering guardrails` fails | The project predates `v2.2.0`, or the line was deleted while filling in the template. `CLAUDE.md` is the project's, so no upgrade can add it — paste `@.sdlc/standards/engineering-guardrails.md` back in |
+| `REVIEW.md keeps the Guardrails pass` fails | Same cause. Copy the *Guardrails* bullet from the template's `.sdlc/REVIEW.md` |
+| `design: a high-level diagram is declared` fails | The project predates the guardrail G6. Add `diagram: .sdlc/architecture/container.md` under `stages.design` in `.sdlc/flow.yaml` and create the file — both are the project's, so no upgrade can add them |
+| `specs/<slug>.md: High-level design` fails | The spec neither shows an amended mermaid view nor states `No architectural change.`. A spec written before G6 existed needs the line added once |
 | `workflow was not found` on every run | The template is private and the consumer is public. No setting permits that combination |
 | Required check never completes | Either the check is `ci / test`, not `test` — a called workflow reports as `<caller job> / <called job>` — or a check was required from a path-filtered workflow. A skipped run reports no status, so the check stays pending forever |
 | Spec pull request opens but never merges | `SDLC_BOT_TOKEN` is missing, so the author is `github-actions[bot]`, which cannot approve its own pull request. Or auto-merge is disabled on the repository |
