@@ -10,7 +10,7 @@ The spec is a diagnosis, not a feature. Most requirements wait on data this buil
 
 ## Order of work
 1. **R1, confirm the breach.** Run `scripts/detect.sh --bands .sdlc/monitoring/bands.json --metrics .sdlc/monitoring/metrics.json --inject 0.052` and record the output. Not done in this build: the CI sandbox refused to run the script. A maintainer should run it and paste the result in the PR. The expected result is the one in the intent (z = 2.40, tier `2sigma`).
-2. **R9 / R4, read the repo-visible evidence (done).**
+2. **R9 evidence gathered; R4 open.**
    - `.github/workflows/monitor.yml:14-16` has a `workflow_dispatch` input `inject`, described as "Synthetic latest value to simulate a breach (e.g. 0.052 for 2σ, 0.2 for 3σ)". The reported latest value is exactly `0.052`.
    - `scripts/detect.sh` only appends `--inject` to the series in memory and never writes `metrics.json`. This would explain why 0.052 is absent from the committed series, whose last sample is 0.0417 and is in band.
    - Hypothesis, not confirmed: this breach was a synthetic injection, for example a drill of the monitor, and not a real measurement. It is confirmed or refuted by one check: open the Monitor run that produced the report in the Actions tab and see whether `inject` was set to `0.052`. The scheduled run (`cron: 0 */6 * * *`) passes `inject` empty.
