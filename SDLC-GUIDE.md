@@ -208,7 +208,7 @@ Two gates live only in GitHub settings and appear in no file in the repository.
 ## Staying current
 
 `sdlc-update.yml` runs weekly. When a newer tag exists it pulls the invariant layer, repoints the
-five caller workflows, and opens a *chore: SDLC template vX.Y.Z* pull request. To do it sooner, use
+caller workflows, and opens a *chore: SDLC template vX.Y.Z* pull request. To do it sooner, use
 **Actions → SDLC template update → Run workflow**, or run `make sdlc-update` locally and open the
 pull request by hand. Pass a tag to move to a specific version:
 `./.sdlc/scripts/sdlc_update.sh v1.4.0`.
@@ -219,7 +219,16 @@ that reaches `CLAUDE.md`, the `Makefile` bodies or the source tree is a bug wort
 
 **Read the release notes, not the diff.** The diff is mostly shell. The notes say what changed and
 whether anything is required of the project — a release occasionally asks for a manual step, because
-`sdlc_update.sh` cannot edit files the project owns. `claude.yml` is one such file.
+`sdlc_update.sh` cannot edit files the project owns, such as `.claude/settings.json`.
+
+**An upgrade may convert a workflow into a thin caller.** A workflow body that used to live in the
+project moves into the standard, and the upgrade replaces the project's copy with a caller that
+holds only the triggers. Nothing else can deliver a fix to that body. If the project had edited the
+triggers, the edit is in the diff: reapply it to the caller, or pass it as an input to the callable.
+`make template-check` names any caller that still carries a body, and the remedy is
+`./.sdlc/scripts/sdlc_update.sh --rewire` — the upgrade is run by the copy of `sdlc_update.sh`
+installed *before* it, so the release that teaches it a new way to wire the callers cannot use it
+on the way in.
 
 **Three things to expect:**
 

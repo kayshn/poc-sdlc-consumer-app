@@ -74,7 +74,7 @@ if [ -n "$version" ]; then
   ok_if '! ls .github/workflows/_*.yml >/dev/null 2>&1' \
     "no leftover _*.yml callables (workflow_call never self-fires; delete them)"
 
-  for wf in ci claude-review deploy agent-evals sdlc-update; do
+  for wf in ci claude-review deploy agent-evals sdlc-update intent-to-spec spec-to-build claude monitor; do
     [ -f ".github/workflows/$wf.yml" ] || continue
     # Anchored to the start of the line so the `#   uses: ...@vX` example in the file header
     # cannot satisfy the check.
@@ -83,6 +83,11 @@ if [ -n "$version" ]; then
     pinned=$(sed -nE "s#^[[:space:]]*uses: *[^ #]+/\.github/workflows/_$wf\.yml@([^ ]+).*#\1#p" ".github/workflows/$wf.yml")
     [ -z "$pinned" ] || ok_if '[ "$pinned" = "$version" ]' \
       "$wf.yml is pinned to $version (found ${pinned:-none})"
+    # A caller that still carries a body is the defect this split exists to close: an upgrade can
+    # repoint a pinned ref, but it can never reach logic the project holds itself, so a fix to that
+    # logic is announced in the release notes and silently not installed.
+    ok_if '! grep -qE "^[[:space:]]*(runs-on|steps):" ".github/workflows/$wf.yml"' \
+      "$wf.yml is a thin caller, not a local copy of the body (fix: ./.sdlc/scripts/sdlc_update.sh --rewire)"
   done
 
   ok_if '! grep -q "TODO: wire up" Makefile' \
