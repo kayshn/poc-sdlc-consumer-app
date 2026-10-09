@@ -17,5 +17,5 @@ permissions:
 
 jobs:
   handoff:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_spec-to-build.yml@v2.0.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_spec-to-build.yml@v2.1.0
     secrets: inherit

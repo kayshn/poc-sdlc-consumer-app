@@ -65,6 +65,8 @@ ok_if 'grep -q "REVIEW-TALLY" .sdlc/REVIEW.md' "REVIEW.md still ends in a machin
 for pass in Bugs Security Compliance; do
   ok_if 'grep -qi "\*\*$pass\*\*" .sdlc/REVIEW.md' "REVIEW.md keeps the $pass pass"
 done
+ok_if 'grep -q "Claims about what was run" .sdlc/REVIEW.md' \
+  "REVIEW.md keeps the rule that an execution claim is unverified (copy that section from the template)"
 for hook in protect-paths production-gate; do
   ok_if 'grep -q "hooks/$hook.sh" .claude/settings.json' "settings.json still registers $hook.sh"
 done

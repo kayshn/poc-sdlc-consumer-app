@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   sdlc-update:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_sdlc-update.yml@v2.0.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_sdlc-update.yml@v2.1.0
     with:
       ref: ${{ inputs.ref }}
     secrets: inherit
