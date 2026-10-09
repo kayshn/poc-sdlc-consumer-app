@@ -4,6 +4,7 @@
 
 INVARIANT_LIST=.sdlc/invariant.txt
 MANIFEST=.sdlc/MANIFEST.sha256
+MIGRATIONS=.sdlc/MIGRATIONS
 VERSION_FILE=.sdlc/TEMPLATE_VERSION
 
 # The manifest format is ours: `<hash>  <path>`, sorted by path. Deliberately not delegated to
@@ -66,6 +67,45 @@ expand_invariant() {
   LC_ALL=C sort -u "$tmp"
   rm -f "$tmp"
   return $missing
+}
+
+# True when two paths hold the same thing: identical files, or directories with identical contents.
+# False if either is missing or they are of different kinds, so a caller can treat "not provably the
+# same" as "different".
+same_tree() {
+  if [ -d "$1" ] && [ -d "$2" ]; then
+    diff -rq "$1" "$2" >/dev/null 2>&1
+  elif [ -f "$1" ] && [ -f "$2" ]; then
+    cmp -s "$1" "$2"
+  else
+    return 1
+  fi
+}
+
+# Print the migrations declared by <root> as `<kind> <from> <to>` lines.
+#
+# The file is cumulative and append-only. A project upgrading across several releases at once sees
+# only the newest copy, so every entry a consumer might still need has to remain in it. Each entry
+# is a no-op once its source path is gone, which is what makes re-running safe and makes a record
+# of what has already been applied unnecessary.
+read_migrations() {
+  local root=${1:-.} kind from to rest
+  [ -f "$root/$MIGRATIONS" ] || return 0
+  while read -r kind from to rest; do
+    case $kind in '' | '#'*) continue ;; esac
+    case $kind in
+    move | promote) ;;
+    *)
+      echo "$MIGRATIONS: unknown kind '$kind' (expected move or promote)" >&2
+      return 1
+      ;;
+    esac
+    [ -n "$to" ] || {
+      echo "$MIGRATIONS: '$kind $from' has no destination" >&2
+      return 1
+    }
+    printf '%s %s %s\n' "$kind" "$from" "$to"
+  done <"$root/$MIGRATIONS"
 }
 
 # owner/repo this project takes the standard from, or empty in the template repo itself.

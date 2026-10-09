@@ -8,7 +8,7 @@ name: Spec to build
 on:
   push:
     branches: [main]
-    paths: [".sdlc/specs/**.md", "!.sdlc/specs/_TEMPLATE.md"]
+    paths: [".sdlc/specs/**.md"]
 
 # A called workflow can only narrow these, never widen them, so they are declared here.
 permissions:
@@ -17,5 +17,5 @@ permissions:
 
 jobs:
   handoff:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_spec-to-build.yml@v2.3.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_spec-to-build.yml@v3.0.1
     secrets: inherit

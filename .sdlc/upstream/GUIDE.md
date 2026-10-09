@@ -12,7 +12,7 @@ Adopting the loop commits a project to four things:
   It goes through the project's own CI and review. Merging it is a decision, not an obligation.
 - **Every gate stays human.** The agent writes artefacts and findings. It never approves, merges or
   releases. The single automatic approval is the spec, and the pipeline grants it, not the agent.
-- **The agent is held to published rules.** `.sdlc/standards/engineering-guardrails.md` arrives with
+- **The agent is held to published rules.** `.sdlc/upstream/standards/engineering-guardrails.md` arrives with
   the standard and binds every change the agent proposes. The project points `CLAUDE.md` at it once
   and reviews against it; the rules themselves are not the project's to soften.
 
@@ -94,7 +94,7 @@ required reviewers. The build gate has no merge to attach to, which is why the i
    `REVIEW-TALLY` — comments only, never an approval. `@claude fix this` iterates.
 5. **Deploy.** A green CI run on `main` starts `deploy.yml`; the `production` environment's
    reviewers gate it.
-6. **Maintain.** `monitor.yml` runs `scripts/detect.sh` on a schedule. Try it with **Run workflow →
+6. **Maintain.** `monitor.yml` runs `.sdlc/upstream/scripts/detect.sh` on a schedule. Try it with **Run workflow →
    inject `0.052`** (2σ, opens a monitor intent pull request) or `0.2` (3σ, also runs the rollback
    runbook).
 
@@ -115,7 +115,7 @@ pushing.
 | `make sdlc-update` | `git`, `curl`, `tar` |
 | Claude Code locally | optional. The same hooks apply: `SDLC_FIX_MODE=1` freezes the paths in `.sdlc/protected-paths.txt`, `SDLC_STAGE=build` freezes `.sdlc/intent/` and `.sdlc/specs/` |
 
-`gh` is not required. The only script that uses it, `.sdlc/scripts/open_pr.sh`, runs on the runner.
+`gh` is not required. The only script that uses it, `.sdlc/upstream/scripts/open_pr.sh`, runs on the runner.
 
 ---
 
@@ -136,7 +136,7 @@ pushing.
 ```bash
 gh repo create <owner>/<app> --template kayshn/poc-sdlc-template --clone --public
 cd <app>
-./.sdlc/scripts/sdlc_update.sh --source kayshn/poc-sdlc-template
+./.sdlc/upstream/scripts/sdlc_update.sh --source kayshn/poc-sdlc-template
 ```
 
 That pins the newest tag in `.sdlc/TEMPLATE_VERSION`, repoints every thin caller workflow at it,
@@ -166,10 +166,10 @@ produces plausible noise.
 
 | File | Do |
 |---|---|
-| `CLAUDE.md` | Fill in every `<...>`. *Conventions* and *Things the agent gets wrong* are what steer it — name real symbols, not principles. Keep it short; a long file is a file the agent skims. Leave the `@.sdlc/standards/engineering-guardrails.md` line alone: it is how the rules reach every session, and `make template-check` fails without it |
-| `.sdlc/REVIEW.md` | Rewrite the *Security* bullet for the project's real risks. Keep the four passes, the severities and the `REVIEW-TALLY` line — the pipeline parses them |
+| `CLAUDE.md` | Fill in every `<...>`. *Conventions* and *Things the agent gets wrong* are what steer it — name real symbols, not principles. Keep it short; a long file is a file the agent skims. Leave the `@.sdlc/upstream/standards/engineering-guardrails.md` line alone: it is how the rules reach every session, and `make template-check` fails without it |
+| `.sdlc/upstream/REVIEW.md` | Rewrite the *Security* bullet for the project's real risks. Keep the four passes, the severities and the `REVIEW-TALLY` line — the pipeline parses them |
 | `.sdlc/standards/project-guardrails.md` | Optional, and the project's own. Rules specific to this stack, alongside the invariant `engineering-guardrails.md`. Import it from `CLAUDE.md` the same way |
-| `.claude/skills/secure-api-review/SKILL.md` | Rewrite in terms of the project's own helpers and types, or delete it and its references in `CLAUDE.md`, `.sdlc/REVIEW.md`, `claude-review.yml`, `flow.yaml` and `write-spec`. Add one skill per policy to enforce at design time |
+| `.claude/skills/secure-api-review/SKILL.md` | Rewrite in terms of the project's own helpers and types, or delete it and its references in `CLAUDE.md`, `.sdlc/upstream/REVIEW.md`, `claude-review.yml`, `flow.yaml` and `write-spec`. Add one skill per policy to enforce at design time |
 | `.sdlc/protected-paths.txt` | Point at the test directory. The hook enforcing it is invariant, so this file is the only place the rule can be retargeted |
 | `.sdlc/architecture/container.md` | Replace the stub with this system at container level. Every spec from then on either amends it or says `No architectural change.`, and `make flow-check` fails a spec that says neither |
 | `.sdlc/flow.yaml` | Set `stages.build.produces` to the real source and test directories. `stages.design.diagram` names the high-level diagram and must point at a file that exists |
@@ -205,7 +205,7 @@ Two gates live only in GitHub settings and appear in no file in the repository.
   status and rollback to the agent as MCP tools.
 - **`.sdlc/monitoring/metrics.json`** — replace the sample series with a real source; tune
   `bands.json`.
-- **`.sdlc/evals/cases/`** — copy `_EXAMPLE/` to add cases for the project's own policies. Folders
+- **`.sdlc/upstream/evals/cases/`** — copy `_EXAMPLE/` to add cases for the project's own policies. Folders
   starting with `_` are skipped. Treat a regression here like a failing test.
 
 ---
@@ -216,7 +216,7 @@ Two gates live only in GitHub settings and appear in no file in the repository.
 caller workflows, and opens a *chore: SDLC template vX.Y.Z* pull request. To do it sooner, use
 **Actions → SDLC template update → Run workflow**, or run `make sdlc-update` locally and open the
 pull request by hand. Pass a tag to move to a specific version:
-`./.sdlc/scripts/sdlc_update.sh v1.4.0`.
+`./.sdlc/upstream/scripts/sdlc_update.sh v1.4.0`.
 
 **What the pull request may contain.** Only files named in `.sdlc/invariant.txt`, the pinned refs in
 the callers, and `.sdlc/TEMPLATE_VERSION`. Anything the project owns is never touched, so a diff
@@ -231,9 +231,42 @@ project moves into the standard, and the upgrade replaces the project's copy wit
 holds only the triggers. Nothing else can deliver a fix to that body. If the project had edited the
 triggers, the edit is in the diff: reapply it to the caller, or pass it as an input to the callable.
 `make template-check` names any caller that still carries a body, and the remedy is
-`./.sdlc/scripts/sdlc_update.sh --rewire` — the upgrade is run by the copy of `sdlc_update.sh`
+`./.sdlc/upstream/scripts/sdlc_update.sh --rewire` — the upgrade is run by the copy of `sdlc_update.sh`
 installed *before* it, so the release that teaches it a new way to wire the callers cannot use it
 on the way in.
+
+**An upgrade may change the shape of the project.** Comparing manifests tells `sdlc_update.sh` what
+the standard ships, not where the project's own files should live, so a release that relocates a
+path the project owns — or takes over a file the project used to own — declares it in
+`.sdlc/MIGRATIONS`. Two kinds, and only the second ever interrupts:
+
+- `move` relocates a path the project owns. It happens quietly, appears in the diff as a rename, and
+  refuses rather than merges if something is already at the destination.
+- `promote` means a file the project owned is now part of the standard. An identical copy is deleted
+  as redundant. **A copy that differs stops the upgrade before anything is written**, printing the
+  diff, because installing over it would revert a deliberate edit with no warning and no record.
+  Every promoted file has a documented seam for keeping that difference without keeping a copy of
+  the file — `.sdlc/REVIEW.local.md` beside `REVIEW.md`, `project-guardrails.md` beside the
+  engineering guardrails, a `make` target behind a hook. Port the change into the seam and re-run.
+  `--accept-promotions` is the escape hatch: it takes the standard's version and leaves yours on
+  disk to port later, and `make template-check` fails until that copy is gone.
+
+## Keeping a local difference
+
+Some of what a project receives has a seam for project-specific behaviour, so that a local need does
+not have to become a local copy. A copy is the expensive choice: it is frozen at the version it was
+taken from, and no later fix can reach it.
+
+| Instead of editing | Put it here |
+|---|---|
+| `.sdlc/upstream/REVIEW.md` | `.sdlc/REVIEW.local.md` — extra passes, run after the standard ones |
+| `.sdlc/upstream/standards/engineering-guardrails.md` | `.sdlc/standards/project-guardrails.md` — numbered `P1`, `P2`, so a review can cite one without ambiguity |
+| `.claude/hooks/format-on-edit.sh` | `make format-file FILE=<path>` — the hook calls it after every agent edit |
+| `.claude/agents/verifier.md` | `make verify` — how this project exercises behaviour directly |
+| a workflow body | the caller's triggers, or an input to the callable |
+
+Both `.sdlc/REVIEW.local.md` and `project-guardrails.md` are optional; nothing fails if they are
+absent. `make format-file` and `make verify` ship as stubs that print a TODO.
 
 **Three things to expect:**
 
@@ -245,10 +278,10 @@ on the way in.
   something previously tolerated reports it as a failure for the project to resolve. Upgrades never
   delete a file the project might own: template-upkeep files are removed only on first install,
   because deleting a file called `TODO.md` on every upgrade would eventually destroy a real backlog.
-- **Files the template seeds are never backfilled.** `CLAUDE.md`, the `_TEMPLATE.md` artefacts and
-  the caller workflows arrive once, at repository creation, and belong to the project from then on.
-  Only the invariant layer is redelivered. A repository created before a seeded file existed never
-  receives it.
+- **Files the template seeds are never backfilled.** `CLAUDE.md`, `flow.yaml`, `project-guardrails.md`
+  and the caller workflows arrive once, at repository creation, and belong to the project from then
+  on. Only the received layer is redelivered. A repository created before a seeded file existed
+  never receives it, which is why a release that needs one asks for a manual step instead.
 
 **Skipping a release is safe**; upgrades are cumulative. Staying several versions behind is not
 especially risky either, but `check_template.sh` warns on every run until the project catches up.
@@ -261,10 +294,13 @@ especially risky either, but `check_template.sh` warns on every run until the pr
 |---|---|
 | `the invariant layer matches the manifest` fails | A file in `.sdlc/invariant.txt` was edited. `make sdlc-update` restores it; if the change was wanted, propose it upstream |
 | `ci.yml calls the standard by ref` fails | A caller was reverted to `uses: ./...`, or a local `_*.yml` came back |
-| `CLAUDE.md imports the engineering guardrails` fails | The project predates `v2.2.0`, or the line was deleted while filling in the template. `CLAUDE.md` is the project's, so no upgrade can add it — paste `@.sdlc/standards/engineering-guardrails.md` back in |
-| `REVIEW.md keeps the Guardrails pass` fails | Same cause. Copy the *Guardrails* bullet from the template's `.sdlc/REVIEW.md` |
+| `CLAUDE.md imports the engineering guardrails` fails | The project predates `v2.2.0`, the line was deleted while filling in the template, or it still names the pre-`v3.0.0` path. `CLAUDE.md` is the project's, so no upgrade can fix it — make the line read `@.sdlc/upstream/standards/engineering-guardrails.md` |
+| `Makefile includes the standard's targets` fails | `v3.0.0` moved `flow-check`, `template-check`, `sdlc-update`, `evals` and `detect` into `.sdlc/upstream/sdlc.mk`. Add `include .sdlc/upstream/sdlc.mk` and delete your copies of those five targets — a local copy can never receive a fix |
+| `REVIEW.md keeps the Guardrails pass` fails | Same cause. Copy the *Guardrails* bullet from the template's `.sdlc/upstream/REVIEW.md` |
 | `design: a high-level diagram is declared` fails | The project predates the guardrail G6. Add `diagram: .sdlc/architecture/container.md` under `stages.design` in `.sdlc/flow.yaml` and create the file — both are the project's, so no upgrade can add them |
 | `specs/<slug>.md: High-level design` fails | The spec neither shows an amended mermaid view nor states `No architectural change.`. A spec written before G6 existed needs the line added once |
+| `becomes part of the standard, and your copy differs` stops an upgrade | A release took over a file the project owned. Port the local change into that file's seam and re-run, or use `--accept-promotions` to take the standard's version and port later |
+| `is gone now that the standard ships it as ...` fails | A promoted file was left on disk by `--accept-promotions`. It is inert — the pipeline reads the standard's copy. Port the change, then delete it |
 | `workflow was not found` on every run | The template is private and the consumer is public. No setting permits that combination |
 | Required check never completes | Either the check is `ci / test`, not `test` — a called workflow reports as `<caller job> / <called job>` — or a check was required from a path-filtered workflow. A skipped run reports no status, so the check stays pending forever |
 | Spec pull request opens but never merges | `SDLC_BOT_TOKEN` is missing, so the author is `github-actions[bot]`, which cannot approve its own pull request. Or auto-merge is disabled on the repository |

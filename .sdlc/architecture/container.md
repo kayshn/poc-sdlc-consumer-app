@@ -2,7 +2,7 @@
 
 One view of this system at container level: what runs, what holds state, what it talks to across a
 trust boundary. The design stage amends it — `.sdlc/flow.yaml` names this path under
-`stages.design.diagram`, and G6 in `.sdlc/standards/engineering-guardrails.md` binds a change to it.
+`stages.design.diagram`, and G6 in `.sdlc/upstream/standards/engineering-guardrails.md` binds a change to it.
 
 Two rules keep it worth reading:
 

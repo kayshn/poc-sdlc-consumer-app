@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   monitor:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_monitor.yml@v2.3.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_monitor.yml@v3.0.1
     with:
       inject: ${{ inputs.inject }}
     secrets: inherit

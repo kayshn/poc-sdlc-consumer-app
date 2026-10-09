@@ -2,7 +2,7 @@
 # Run each eval case in a fresh worktree with the repo's CLAUDE.md, skills and hooks,
 # then apply its deterministic check. Fails if the pass rate drops below MIN_PASS_RATE.
 #
-# A case is a folder under .sdlc/evals/cases/ with:
+# A case is a folder under .sdlc/upstream/evals/cases/ with:
 #   prompt.md  the task given to the agent
 #   check.sh   exits 0 if the result is acceptable (runs in the worktree)
 #   setup.sh   optional, runs before the agent (e.g. introduce a bug)
@@ -19,7 +19,7 @@ MODEL=${EVAL_MODEL:-claude-sonnet-5-5}
 OUT=${EVAL_OUT:-$ROOT/eval-results}
 mkdir -p "$OUT"
 
-CASES=$ROOT/.sdlc/evals/cases
+CASES=$ROOT/.sdlc/upstream/evals/cases
 compgen -G "$CASES/*/" >/dev/null || { echo "No eval cases found under $CASES" >&2; exit 1; }
 
 # `claude -p` exits 0 even when the run failed, reporting it as `is_error` in the JSON result.
@@ -58,7 +58,7 @@ for case in "$CASES"/*/; do
     # Without this the workspace is untrusted, .claude/settings.json is ignored, and the hooks the
     # case exists to exercise never run. Claude Code keys trust on the repository, so the main
     # checkout has to be trusted as well as the worktree.
-    "$ROOT/.sdlc/scripts/trust_workspace.sh" "$ROOT" "$wt" >/dev/null
+    "$ROOT/.sdlc/upstream/scripts/trust_workspace.sh" "$ROOT" "$wt" >/dev/null
     CLAUDE_PROJECT_DIR="$wt" claude -p "$(cat "$case/prompt.md")" \
       --model "$MODEL" \
       --permission-mode acceptEdits \

@@ -3,7 +3,7 @@
 # Run by ci.yml; run it yourself with `make flow-check`. Needs: yq (mikefarah), preinstalled on
 # GitHub's Ubuntu runners. This is deliberately independent of the project's own test runner.
 set -uo pipefail
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../../.."
 
 FLOW=.sdlc/flow.yaml
 WORKFLOWS=.github/workflows
