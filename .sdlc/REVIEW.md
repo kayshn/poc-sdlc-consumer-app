@@ -6,7 +6,7 @@ Run four passes and tag each finding with its pass:
 - **Security**: a route without `Depends(require_user)`; a redirect target not checked against `ALLOWED_SCHEMES` via `urlparse`; a guessable short code; 403 instead of 404 for another user's link; a missing `store.record` on a state-changing route by an authenticated caller (`GET /{code}` is exempt — see secure-api-review rule 4); a request model without `extra="forbid"`; a target URL reaching a log line, an error message or an audit entry; the `Link` dataclass returned instead of `LinkOut`. Apply the secure-api-review skill.
 - **Compliance**: the change matches `.sdlc/specs/<slug>.md` and `.sdlc/plans/<slug>.md` for this change, and CLAUDE.md conventions. If the PR has no matching spec or plan, say so.
 - **Guardrails** — check the diff against `.sdlc/standards/engineering-guardrails.md`. Cite the
-  id (G1–G5) for every breach. A suppression added to make a check pass is a G2 breach even when
+  id (G1–G6) for every breach. A suppression added to make a check pass is a G2 breach even when
   the check was genuinely wrong.
 
 ## Claims about what was run

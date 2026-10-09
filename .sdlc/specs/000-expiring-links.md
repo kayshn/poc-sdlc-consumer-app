@@ -45,6 +45,12 @@ Intent: .sdlc/intent/000-expiring-links.md. Skills applied: write-spec, secure-a
 | Zero or negative | 422. Creating an already-expired link has no valid use. |
 | Remove expired links? | Retain. A held code is never silently reassigned. |
 
+## High-level design
+No architectural change.
+
+Two fields on an existing record in the existing in-process store: no deployable unit, datastore,
+external service or trust boundary moves. (Backfilled when G6 was adopted; the spec predates it.)
+
 ## Policy check
 - secure-api-review 1, Authentication: satisfied. `POST /links`, `GET /links` and `DELETE` keep `Depends(require_user)`. No anonymous route is added. `GET /{code}` stays anonymous as today.
 - secure-api-review 2, Input validation: satisfied. The new field is on a `BaseModel` with `extra="forbid"` and strict, bounded typing.

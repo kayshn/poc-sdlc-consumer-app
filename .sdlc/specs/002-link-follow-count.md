@@ -47,6 +47,12 @@ audit entry and records nothing about the request, the caller or the target.
   other user's `GET /links` never shows the count; concurrent follows; `POST` returns 0; delete
   then re-list.
 
+## High-level design
+No architectural change.
+
+One counter on an existing record, guarded by a stdlib lock inside the same process: nothing new is
+deployed, stored elsewhere or called out to. (Backfilled when G6 was adopted; the spec predates it.)
+
 ## Policy check
 - secure-api-review 1 Authentication: satisfied. No route added or changed in auth. `GET /{code}` is
   already one of the two permitted anonymous routes; no third is introduced. `GET /links` and

@@ -29,6 +29,12 @@ The intent's evidence is weak: it rests on one point, in a series that has reach
 - **API shape and data:** no endpoint, request body, storage or audit change. The in-memory `store`, `LinkOut`, `require_user`, `ALLOWED_SCHEMES` and the `GET /{code}` catch-all ordering are untouched.
 - **Output artefacts:** a plan at `.sdlc/plans/<slug>.md`, and conditionally a lesson and an eval (R10).
 
+## High-level design
+No architectural change.
+
+Read-only analysis of CI data that touches no application component at all. (Backfilled when G6 was
+adopted; the spec predates it.)
+
 ## Policy check
 - secure-api-review: not applicable, no endpoint is added or changed. Auth, ownership (404 not 403), `extra="forbid"`, audit and target-URL logging rules are unaffected. If a later fix does touch an endpoint, the spec must be revised and the review re-run.
 - CLAUDE.md "do not edit invariant files": satisfied by R7.

@@ -29,6 +29,7 @@ stages:
     by: agent
     produces: [.sdlc/specs/<slug>.md]
     template: .sdlc/specs/_TEMPLATE.md
+    diagram: .sdlc/architecture/container.md
     skills: [write-spec, secure-api-review]
     gate:
       configurable: true
