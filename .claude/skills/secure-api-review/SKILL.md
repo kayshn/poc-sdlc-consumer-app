@@ -15,10 +15,12 @@ When you create, change, specify or review an API endpoint in `src/app/main.py`:
    `javascript:`, `data:` and scheme-relative targets are open-redirect holes.
 4. **Audit.** Every state-changing route by an authenticated caller calls
    `store.record(user, "<entity>.<action>", code)`. Pass the code, never the target.
-   The one exemption is `GET /{code}`: it is anonymous, so there is no actor to record, and an
-   audit entry for it could only be assembled from the request, which rule 7 forbids. It increments
-   a bare counter through `store.count_follow` instead, which keeps nothing about the caller.
-   A second exemption needs a line in the spec saying why, and a change to this rule.
+   The one exemption is `GET /{code}`: it is anonymous, so there is no actor to record, and
+   `.sdlc/intent/002-link-follow-count.md` rules that counting follows must not become a follow
+   log — not who followed, not when, nothing derived from the request. An entry per follow would
+   also grow the in-memory audit without bound on the one route anybody can call. It increments a
+   bare counter through `store.count_follow` instead. A second exemption needs a line in the spec
+   saying why, and a change to this rule.
 5. **Ownership.** Reads and writes filter on `link.owner == user`. Another user's link is a **404,
    not a 403** — a 403 confirms the code exists.
 6. **Codes are secrets.** Generate them with `secrets.token_urlsafe`, never a counter, a hash of the
