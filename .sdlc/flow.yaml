@@ -4,7 +4,7 @@
 #
 # Read by the pipeline: `gate.approval` on stages marked `configurable: true` (auto | manual).
 # Every other gate is enforced outside this file (`enforced_by`), so it is documented here, not
-# switched here. .sdlc/scripts/check_flow.sh keeps this file in step with the repo.
+# switched here. .sdlc/upstream/scripts/check_flow.sh keeps this file in step with the repo.
 version: 1
 
 actors:
@@ -16,7 +16,7 @@ stages:
   plan:
     by: human # or the maintain stage, with nobody in the invocation path
     produces: [.sdlc/intent/<slug>.md]
-    template: .sdlc/intent/_TEMPLATE.md
+    template: .sdlc/upstream/templates/intent.md
     skills: [write-intent]
     review: claude-review.yml
     gate:
@@ -28,7 +28,7 @@ stages:
     trigger: { workflow: intent-to-spec.yml, on: merge of .sdlc/intent/<slug>.md }
     by: agent
     produces: [.sdlc/specs/<slug>.md]
-    template: .sdlc/specs/_TEMPLATE.md
+    template: .sdlc/upstream/templates/spec.md
     diagram: .sdlc/architecture/container.md
     skills: [write-spec, secure-api-review]
     gate:
@@ -45,7 +45,7 @@ stages:
     start: manual # nothing is built until a person comments @claude on the Build issue
     by: agent
     produces: [.sdlc/plans/<slug>.md, src/app/, tests/]
-    template: .sdlc/plans/_TEMPLATE.md
+    template: .sdlc/upstream/templates/plan.md
     workflow: claude.yml
     gate:
       approval: manual

@@ -1,42 +1,36 @@
-# The invariant layer: the part of the AI-native SDLC template that a consuming project receives
-# rather than owns. `make manifest` hashes exactly these paths into .sdlc/MANIFEST.sha256, and
+# The received layer: the part of the AI-native SDLC template that a consuming project gets rather
+# than owns. `make manifest` hashes exactly these paths into .sdlc/MANIFEST.sha256, and
 # `make template-check` fails if any of them has drifted locally.
 #
-# Everything NOT listed here is yours to change: the Makefile bodies, CLAUDE.md, the _TEMPLATE.md
-# artefacts, flow.yaml, bands.json, scripts/deploy.sh, .claude/skills/ and .claude/settings.json.
+# Everything NOT listed here is yours to change: your Makefile targets, CLAUDE.md, flow.yaml,
+# bands.json, protected-paths.txt, .sdlc/architecture/, .sdlc/standards/project-guardrails.md,
+# .sdlc/REVIEW.local.md, .claude/settings.json, the secure-api-review skill and the deploy scripts.
 #
-# Entries are literal file or directory paths, never globs, so that deleting a file from the
-# standard is a visible edit to this list rather than a silently narrower glob.
-# This file lists itself for the same reason.
+# This file lists itself, so that removing something from the standard is a visible edit here.
 .sdlc/invariant.txt
 
-# The scripts the pipeline relies on being deterministic. make_manifest.sh is deliberately absent:
-# it regenerates the manifest, so shipping it to a consumer would put "silence the drift check"
-# one command away from anyone who hits a red build.
-.sdlc/scripts/_sdlc_lib.sh
-.sdlc/scripts/check_flow.sh
-.sdlc/scripts/check_template.sh
-.sdlc/scripts/next_intent_number.sh
-.sdlc/scripts/open_pr.sh
-.sdlc/scripts/sdlc_update.sh
-.sdlc/scripts/trust_workspace.sh
+# How a release changes the shape of a project: relocating a path the project owns, or taking over
+# a file it used to own. Received rather than owned, because the consumer is the one it is done to.
+#
+# This file, the manifest and .sdlc/TEMPLATE_VERSION all stay at .sdlc/ and can never move: an
+# upgrade is run by the copy of sdlc_update.sh installed *before* it, and that copy reads all three
+# from the incoming archive at these exact paths.
+.sdlc/MIGRATIONS
 
-# Documentation of the standard travels with the standard. A team that held its own copy of this
-# would keep a guide that quietly stopped being true the next time the loop changed.
-SDLC-GUIDE.md
+# Everything the loop needs that is not pinned to a path by another tool. A directory entry is
+# find-expanded, which was once a hazard — a consumer's own file could be swept into the manifest.
+# It is safe here precisely because this directory is exclusively the standard's: a file appearing
+# in it that the standard did not ship is itself the signal, not an accident waiting to happen.
+.sdlc/upstream
 
-# The rules the agent is held to. The pointer that loads them lives in each project's CLAUDE.md,
-# which the project owns; check_template.sh enforces that the pointer is present. That way the
-# wiring is paid for once and every later revision of the rules arrives without a consumer edit.
-.sdlc/standards/engineering-guardrails.md
-
-# The eval harness, and the one case that proves the hooks actually block.
-.sdlc/evals/run_evals.sh
-.sdlc/evals/cases/intent-is-frozen-during-build
-
-# The hooks that stop the agent passing a gate. format-on-edit.sh is deliberately absent: it is a
-# formatter stub every project fills in. protect-paths.sh reads .sdlc/protected-paths.txt, so the
-# enforcement stays frozen while the paths it protects remain yours.
+# Pinned to .claude/ by Claude Code, which discovers them by convention rather than by a configured
+# path, so they stay there and are listed one by one. The bodies are the standard's; what they do
+# for a given project is reached through a seam: format-on-edit.sh calls `make format-file`,
+# verifier.md calls `make verify`, and protect-paths.sh reads .sdlc/protected-paths.txt.
 .claude/hooks/_lib.sh
+.claude/hooks/format-on-edit.sh
 .claude/hooks/production-gate.sh
 .claude/hooks/protect-paths.sh
+.claude/agents/verifier.md
+.claude/skills/write-intent/SKILL.md
+.claude/skills/write-spec/SKILL.md

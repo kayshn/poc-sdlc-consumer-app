@@ -15,9 +15,9 @@
 #
 # Run by ci.yml via `make template-check`, as its own step, independent of your test runner.
 set -uo pipefail
-cd "$(dirname "$0")/../.."
-# shellcheck source=.sdlc/scripts/_sdlc_lib.sh
-. ./.sdlc/scripts/_sdlc_lib.sh
+cd "$(dirname "$0")/../../.."
+# shellcheck source=.sdlc/upstream/scripts/_sdlc_lib.sh
+. ./.sdlc/upstream/scripts/_sdlc_lib.sh
 
 fail=0
 check() { if [ "$1" = ok ]; then echo "  ok   $2"; else echo "  FAIL $2"; fail=1; fi; }
@@ -59,16 +59,16 @@ else
 fi
 
 # --- structural contracts the workflows depend on ----------------------------------------------
-# .sdlc/REVIEW.md and .claude/settings.json stay yours to edit, so they are checked for the
+# .sdlc/upstream/REVIEW.md and .claude/settings.json stay yours to edit, so they are checked for the
 # contract the pipeline reads, not for byte equality.
-ok_if 'grep -q "REVIEW-TALLY" .sdlc/REVIEW.md' "REVIEW.md still ends in a machine-readable tally"
+ok_if 'grep -q "REVIEW-TALLY" .sdlc/upstream/REVIEW.md' "REVIEW.md still ends in a machine-readable tally"
 for pass in Bugs Security Compliance Guardrails; do
-  ok_if 'grep -qi "\*\*$pass\*\*" .sdlc/REVIEW.md' "REVIEW.md keeps the $pass pass"
+  ok_if 'grep -qi "\*\*$pass\*\*" .sdlc/upstream/REVIEW.md' "REVIEW.md keeps the $pass pass"
 done
-ok_if 'grep -q "Claims about what was run" .sdlc/REVIEW.md' \
+ok_if 'grep -q "Claims about what was run" .sdlc/upstream/REVIEW.md' \
   "REVIEW.md keeps the rule that an execution claim is unverified (copy that section from the template)"
-ok_if 'grep -q "@\.sdlc/standards/engineering-guardrails\.md" CLAUDE.md' \
-  "CLAUDE.md imports the engineering guardrails (add a line: @.sdlc/standards/engineering-guardrails.md)"
+ok_if 'grep -q "@\.sdlc/upstream/standards/engineering-guardrails\.md" CLAUDE.md' \
+  "CLAUDE.md imports the engineering guardrails (add a line: @.sdlc/upstream/standards/engineering-guardrails.md)"
 for hook in protect-paths production-gate; do
   ok_if 'grep -q "hooks/$hook.sh" .claude/settings.json' "settings.json still registers $hook.sh"
 done
@@ -91,21 +91,37 @@ if [ -n "$version" ]; then
     # repoint a pinned ref, but it can never reach logic the project holds itself, so a fix to that
     # logic is announced in the release notes and silently not installed.
     ok_if '! grep -qE "^[[:space:]]*(runs-on|steps):" ".github/workflows/$wf.yml"' \
-      "$wf.yml is a thin caller, not a local copy of the body (fix: ./.sdlc/scripts/sdlc_update.sh --rewire)"
+      "$wf.yml is a thin caller, not a local copy of the body (fix: ./.sdlc/upstream/scripts/sdlc_update.sh --rewire)"
   done
 
   ok_if '! grep -q "TODO: wire up" Makefile' \
     "make lint and make test are wired up (the template ships them failing on purpose)"
 
+  # The loop's own targets arrive in sdlc.mk so that a fix to one reaches every project. A local
+  # copy of them cannot receive that fix, and defining both makes GNU make silently prefer the copy.
+  ok_if 'grep -qE "^include +\.sdlc/upstream/sdlc\.mk" Makefile' \
+    "Makefile includes the standard's targets (add: include .sdlc/upstream/sdlc.mk)"
+  ok_if '! grep -qE "^(flow-check|template-check|sdlc-update|evals|detect):" Makefile' \
+    "flow-check, template-check, sdlc-update, evals and detect come from sdlc.mk, not from your Makefile"
+
   # Files that belong to the template's own upkeep, not to a project built from it.
-  for leftover in TODO.md .sdlc/scripts/make_manifest.sh; do
+  for leftover in TODO.md tools/make_manifest.sh; do
     ok_if '[ ! -e "$leftover" ]' "$leftover is not carried over from the template"
   done
 
-  # ONBOARDING.md was merged into SDLC-GUIDE.md. A consumer that predates the merge still has its
+  # A file the standard has taken over must not linger. Two copies means the one being edited is
+  # not the one the pipeline reads, which is the quietest way to lose a change. A path taken over
+  # where it stands has no second copy, so there is nothing to check.
+  while read -r kind from to; do
+    [ "$kind" = promote ] || continue
+    [ "$from" != "$to" ] || continue
+    ok_if '[ ! -e "$from" ]' "$from is gone now that the standard ships it as $to (port any local change into the seam, then delete it)"
+  done < <(read_migrations .)
+
+  # ONBOARDING.md was merged into .sdlc/upstream/GUIDE.md. A consumer that predates the merge still has its
   # own copy, which sdlc_update.sh cannot remove because the project owns it.
   if [ -f ONBOARDING.md ]; then
-    warn "ONBOARDING.md was merged into SDLC-GUIDE.md and can be deleted"
+    warn "ONBOARDING.md was merged into .sdlc/upstream/GUIDE.md and can be deleted"
   fi
 fi
 

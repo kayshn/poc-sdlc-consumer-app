@@ -9,7 +9,7 @@ name: Intent to spec
 on:
   push:
     branches: [main]
-    paths: [".sdlc/intent/**.md", "!.sdlc/intent/_TEMPLATE.md"]
+    paths: [".sdlc/intent/**.md"]
   workflow_dispatch:
     inputs:
       slug:
@@ -28,7 +28,7 @@ concurrency: intent-to-spec
 
 jobs:
   spec:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_intent-to-spec.yml@v2.3.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_intent-to-spec.yml@v3.0.0
     with:
       slug: ${{ inputs.slug }}
     secrets: inherit

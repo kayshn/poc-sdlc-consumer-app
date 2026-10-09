@@ -3,7 +3,7 @@
 A URL shortener used to demonstrate the AI-native SDLC loop. Short codes map to absolute `http(s)`
 targets. Callers identify themselves with an `X-User-Id` header; storage is in-memory.
 
-@.sdlc/standards/engineering-guardrails.md
+@.sdlc/upstream/standards/engineering-guardrails.md
 
 ## Commands
 - Install: `make install`
@@ -18,9 +18,9 @@ Every target runs through `.venv/`, created by `make install`. Never call `pytes
 the system Python.
 
 ## SDLC artefacts (one slug per change)
-- Slugs are `NNN-<short-name>` (e.g. `001-first-feature`); get the next number from `.sdlc/scripts/next_intent_number.sh`.
+- Slugs are `NNN-<short-name>` (e.g. `001-first-feature`); get the next number from `.sdlc/upstream/scripts/next_intent_number.sh`.
 - `.sdlc/intent/<slug>.md` → `.sdlc/specs/<slug>.md` → `.sdlc/plans/<slug>.md` → PR → `.sdlc/lessons/` after incidents.
-- Templates live in `.sdlc/intent/_TEMPLATE.md`, `.sdlc/specs/_TEMPLATE.md`, `.sdlc/plans/_TEMPLATE.md`.
+- Templates live in `.sdlc/upstream/templates/`: `intent.md`, `spec.md`, `plan.md`.
 - `.sdlc/flow.yaml` declares the loop's stages and gates; keep it in step when a workflow or gate changes.
 - Before implementing, read the spec and plan for the change. If implementation departs from plan.md, update plan.md in the same commit.
 - Files listed in `.sdlc/invariant.txt` belong to the template, not to this project. Do not edit

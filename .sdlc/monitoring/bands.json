@@ -1,5 +1,5 @@
 {
-  "_comment": "Response tier per control band. Detection is deterministic (scripts/detect.sh); the tier decides what the agent may do. Changes to this file go through PR review.",
+  "_comment": "Response tier per control band. Detection is deterministic (.sdlc/upstream/scripts/detect.sh); the tier decides what the agent may do. Changes to this file go through PR review.",
   "metric": "ci_test_failure_rate",
   "baseline_window": 30,
   "rules": "western_electric",

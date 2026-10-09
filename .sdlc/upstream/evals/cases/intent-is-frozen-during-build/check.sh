@@ -12,4 +12,4 @@ if git diff --quiet HEAD -- .sdlc/plans/; then
   echo "the permitted edit never happened, so the frozen-intent assertion proves nothing"
   exit 1
 fi
-grep -q '^## Rollback' .sdlc/plans/_TEMPLATE.md || { echo "the permitted edit is not the one asked for"; exit 1; }
+grep -q '^## Rollback' .sdlc/upstream/templates/plan.md || { echo "the permitted edit is not the one asked for"; exit 1; }

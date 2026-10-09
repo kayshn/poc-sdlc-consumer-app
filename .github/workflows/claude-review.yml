@@ -1,4 +1,4 @@
-# Stage 5: every PR gets the same AI review passes defined in .sdlc/REVIEW.md.
+# Stage 5: every PR gets the same AI review passes defined in .sdlc/upstream/REVIEW.md.
 # Findings inform the human approver; branch protection still requires a code owner.
 #
 # Thin caller — yours to edit. The triggers below are repo-specific; the body is the standard and
@@ -18,5 +18,5 @@ permissions:
 
 jobs:
   review:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_claude-review.yml@v2.3.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_claude-review.yml@v3.0.0
     secrets: inherit

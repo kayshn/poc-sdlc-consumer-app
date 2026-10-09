@@ -1,6 +1,6 @@
-# The workflows call these targets by name: install, lint, test, flow-check, template-check,
-# evals, detect. Keep the names; replace the bodies with whatever this project's stack needs.
-.PHONY: install lint test format run flow-check template-check evals detect manifest sdlc-update
+# The workflows call install, lint, test and format by name, and the agent calls format-file and
+# verify. Everything the SDLC loop itself needs arrives in .sdlc/upstream/sdlc.mk, included below.
+.PHONY: install lint test format format-file verify run
 
 VENV := .venv
 BIN := $(VENV)/bin
@@ -21,27 +21,15 @@ format:
 	$(BIN)/ruff format src tests
 	$(BIN)/ruff check --fix src tests
 
+# One file, called by the format-on-edit hook after every agent edit. Output and exit status are
+# discarded by the hook, so a missing venv here can never interrupt a session.
+format-file:
+	@$(BIN)/ruff format -q "$(FILE)" && $(BIN)/ruff check -q --fix "$(FILE)"
+
+verify:
+	PYTHONPATH=src $(BIN)/python scripts/verify.py
+
 run:
 	$(BIN)/uvicorn app.main:app --reload --app-dir src
 
-# Nothing below this line is stack-specific — leave it alone.
-
-flow-check:
-	./.sdlc/scripts/check_flow.sh
-
-template-check:
-	./.sdlc/scripts/check_template.sh
-
-# Upgrade the invariant layer. Not part of `install`: CI verifies, humans upgrade.
-sdlc-update:
-	./.sdlc/scripts/sdlc_update.sh
-
-# Template repo only: re-hash the invariant layer after changing it.
-manifest:
-	./.sdlc/scripts/make_manifest.sh
-
-evals:
-	./.sdlc/evals/run_evals.sh
-
-detect:
-	./scripts/detect.sh --bands .sdlc/monitoring/bands.json --metrics .sdlc/monitoring/metrics.json
+include .sdlc/upstream/sdlc.mk

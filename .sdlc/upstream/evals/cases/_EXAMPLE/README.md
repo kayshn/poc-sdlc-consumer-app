@@ -1,7 +1,7 @@
 # Example eval case — copy this folder to a name without the leading underscore to activate it.
 # run_evals.sh skips folders starting with "_".
 #
-# A case is a folder under .sdlc/evals/cases/ with:
+# A case is a folder under .sdlc/upstream/evals/cases/ with:
 #   prompt.md  the task given to the agent (required)
 #   check.sh   exits 0 if the result is acceptable; runs in a throwaway worktree (required)
 #   setup.sh   optional, runs before the agent, e.g. to introduce a bug
