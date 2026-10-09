@@ -44,8 +44,15 @@ done
 
 configurable=$(yq -r '[.stages | to_entries[] | select(.value.gate.configurable) | .key] | join(" ")' "$FLOW")
 ok_if '[ "$configurable" = design ]' "only the design gate is read by the pipeline (got: ${configurable:-none})"
-ok_if 'grep -q "stages.design.gate.approval" "$WORKFLOWS/intent-to-spec.yml"' \
-  "intent-to-spec.yml reads stages.design.gate.approval"
+# The step that reads the gate lives in the callable body. A consumer calls that body by tag and
+# so has no local copy to grep, which leaves the call itself as the thing to assert.
+if [ -f "$WORKFLOWS/_intent-to-spec.yml" ]; then
+  ok_if 'grep -q "stages.design.gate.approval" "$WORKFLOWS/_intent-to-spec.yml"' \
+    "_intent-to-spec.yml reads stages.design.gate.approval"
+else
+  ok_if 'grep -qE "^[[:space:]]*uses: *[^ #]+/\.github/workflows/_intent-to-spec\.yml@" "$WORKFLOWS/intent-to-spec.yml"' \
+    "intent-to-spec.yml calls the standard body, which reads stages.design.gate.approval"
+fi
 
 [ $fail -eq 0 ] && echo "flow.yaml is in step with the repo."
 exit $fail

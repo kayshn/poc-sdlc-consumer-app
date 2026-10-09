@@ -1,5 +1,10 @@
 # @claude on an issue or PR: Claude builds from a Build issue, or addresses review comments
 # and pushes fixes. Everything it writes lands on a branch / PR behind branch protection.
+#
+# Thin caller — yours to edit. The triggers below are repo-specific; the body is the standard and
+# lives in _claude.yml, including the mention test and the tools the agent is allowed. In a
+# consumer repo replace the `uses:` line with the pinned form:
+#   uses: kayshn/poc-sdlc-template/.github/workflows/_claude.yml@v1.0.0
 name: Claude
 
 on:
@@ -12,6 +17,7 @@ on:
   issues:
     types: [opened, assigned]
 
+# A called workflow can only narrow these, never widen them, so they are declared here.
 permissions:
   contents: write
   pull-requests: write
@@ -21,29 +27,5 @@ permissions:
 
 jobs:
   claude:
-    if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && contains(format('{0} {1}', github.event.issue.title, github.event.issue.body), '@claude'))
-    runs-on: ubuntu-latest
-    env:
-      SDLC_STAGE: build # hooks make .sdlc/intent/ and .sdlc/specs/ read-only
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      # The Makefile is the only seam to this project's stack; `install` provisions the toolchain
-      # so the agent can run lint and tests.
-      - run: make install
-
-      # A fresh checkout is untrusted, which makes Claude Code ignore .claude/settings.json and
-      # with it the hooks that freeze .sdlc/intent/ and .sdlc/specs/ during a build.
-      - run: ./.sdlc/scripts/trust_workspace.sh "$GITHUB_WORKSPACE"
-
-      - uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: |
-            --allowedTools "Skill,Bash(make test),Bash(make lint),Bash(make format),Bash(make flow-check),Bash(make template-check)"
+    uses: kayshn/poc-sdlc-template/.github/workflows/_claude.yml@v2.0.0
+    secrets: inherit

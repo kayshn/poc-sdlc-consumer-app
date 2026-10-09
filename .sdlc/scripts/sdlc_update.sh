@@ -6,6 +6,11 @@
 #   make sdlc-update                        the newest tag of the source in .sdlc/TEMPLATE_VERSION
 #   ./.sdlc/scripts/sdlc_update.sh v1.2.0   a specific tag
 #   ./.sdlc/scripts/sdlc_update.sh --source kayshn/poc-sdlc-template v1.0.0   first install
+#   ./.sdlc/scripts/sdlc_update.sh --rewire   re-run at the version already installed
+#
+# --rewire exists because this script is itself part of the invariant layer: the copy that runs an
+# upgrade is always the one installed *before* it, so a release that changes how the callers are
+# wired cannot wire them on the way in. check_template.sh names the gap and asks for this.
 #
 # Deliberately not run by `make install`: CI that overwrote the invariant layer before testing it
 # could never detect drift, and one bad tag would break every consumer at once. Upgrading is an
@@ -30,12 +35,16 @@ cd "${SDLC_UPDATE_ROOT:-$(dirname "$0")/../..}"
 # shellcheck source=.sdlc/scripts/_sdlc_lib.sh
 . ./.sdlc/scripts/_sdlc_lib.sh
 
-source_repo="" ref=""
+source_repo="" ref="" rewire=0
 while [ $# -gt 0 ]; do
   case $1 in
   --source)
     source_repo=${2:?--source needs owner/repo}
     shift 2
+    ;;
+  --rewire)
+    rewire=1
+    shift
     ;;
   -*)
     echo "Unknown option: $1" >&2
@@ -55,7 +64,11 @@ done
 }
 
 if [ -z "$ref" ]; then
-  ref=$(latest_tag "$source_repo")
+  if [ "$rewire" = 1 ]; then
+    ref=$(template_version)
+  else
+    ref=$(latest_tag "$source_repo")
+  fi
   [ -n "$ref" ] || {
     echo "Could not read the tags of $source_repo." >&2
     exit 1
@@ -63,7 +76,7 @@ if [ -z "$ref" ]; then
 fi
 
 current=$(template_version)
-if [ "$ref" = "$current" ]; then
+if [ "$ref" = "$current" ] && [ "$rewire" != 1 ]; then
   echo "Already on $source_repo $ref."
   exit 0
 fi
@@ -114,6 +127,22 @@ cp -p "$src/$MANIFEST" "$MANIFEST"
 
 # Every pattern below is anchored to the start of the line, so the `#   uses: ...` example in a
 # caller's header comment is never mistaken for the real job key.
+
+# Rewrite `uses: ./.github/workflows/_x.yml` to the pinned form. The `./` form only resolves
+# inside the repo that holds the body, so it is what the template itself uses and what every
+# caller arrives with.
+pin_local_calls() {
+  local wf
+  for wf in .github/workflows/*.yml; do
+    [ -f "$wf" ] || continue
+    case $(basename "$wf") in _*) continue ;; esac
+    grep -qE '^[[:space:]]*uses: *\./\.github/workflows/_[a-z-]+\.yml' "$wf" || continue
+    sed -i.bak -E "s#^([[:space:]]*uses: *)\./(\.github/workflows/_[a-z-]+\.yml)#\1$source_repo/\2@$ref#" "$wf"
+    rm -f "$wf.bak"
+    echo "  ~ $wf now calls $source_repo@$ref"
+  done
+}
+
 if [ "$first_install" = 1 ]; then
   # A repo made from the template inherits the template's own maintenance files. GitHub has no
   # .templateignore, so they are removed here instead.
@@ -125,20 +154,29 @@ if [ "$first_install" = 1 ]; then
 
   # A repo made from the template calls the bodies through its own copies. Switch it over to
   # calling them by tag, and drop the copies: workflow_call never self-fires, so they are inert.
-  for wf in .github/workflows/*.yml; do
-    [ -f "$wf" ] || continue
-    case $(basename "$wf") in _*) continue ;; esac
-    grep -qE '^[[:space:]]*uses: *\./\.github/workflows/_[a-z-]+\.yml' "$wf" || continue
-    sed -i.bak -E "s#^([[:space:]]*uses: *)\./(\.github/workflows/_[a-z-]+\.yml)#\1$source_repo/\2@$ref#" "$wf"
-    rm -f "$wf.bak"
-    echo "  ~ $wf now calls $source_repo@$ref"
-  done
+  pin_local_calls
   for callable in .github/workflows/_*.yml; do
     [ -f "$callable" ] || continue
     rm -f "$callable"
     echo "  - $callable"
   done
 else
+  # A project created before a workflow's body was split out still holds a full-body copy, and no
+  # upgrade can reach it: repointing a pinned ref cannot deliver a fix to logic the project owns,
+  # so the fix is announced in the release notes and silently not installed. Swap such a copy for
+  # this version's thin caller. A trigger the project had customised is then in the diff of the
+  # upgrade pull request, which is where it should be argued about.
+  for body in "$src"/.github/workflows/_*.yml; do
+    [ -f "$body" ] || continue
+    name=${body##*/_}
+    caller=".github/workflows/$name"
+    [ -f "$caller" ] || continue
+    if grep -qE "^[[:space:]]*uses: *[^ #]+/\.github/workflows/_${name%.yml}\.yml@" "$caller"; then continue; fi
+    cp -p "$src/.github/workflows/$name" "$caller"
+    echo "  ~ $caller is now a thin caller; its body moved into the standard as _$name"
+  done
+  pin_local_calls
+
   # Repoint the thin callers at the new tag. Needs a token allowed to touch .github/workflows/.
   for wf in .github/workflows/*.yml; do
     [ -f "$wf" ] || continue
