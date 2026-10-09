@@ -25,6 +25,11 @@
 # would keep a guide that quietly stopped being true the next time the loop changed.
 SDLC-GUIDE.md
 
+# The rules the agent is held to. The pointer that loads them lives in each project's CLAUDE.md,
+# which the project owns; check_template.sh enforces that the pointer is present. That way the
+# wiring is paid for once and every later revision of the rules arrives without a consumer edit.
+.sdlc/standards/engineering-guardrails.md
+
 # The eval harness, and the one case that proves the hooks actually block.
 .sdlc/evals/run_evals.sh
 .sdlc/evals/cases/intent-is-frozen-during-build

@@ -62,11 +62,13 @@ fi
 # .sdlc/REVIEW.md and .claude/settings.json stay yours to edit, so they are checked for the
 # contract the pipeline reads, not for byte equality.
 ok_if 'grep -q "REVIEW-TALLY" .sdlc/REVIEW.md' "REVIEW.md still ends in a machine-readable tally"
-for pass in Bugs Security Compliance; do
+for pass in Bugs Security Compliance Guardrails; do
   ok_if 'grep -qi "\*\*$pass\*\*" .sdlc/REVIEW.md' "REVIEW.md keeps the $pass pass"
 done
 ok_if 'grep -q "Claims about what was run" .sdlc/REVIEW.md' \
   "REVIEW.md keeps the rule that an execution claim is unverified (copy that section from the template)"
+ok_if 'grep -q "@\.sdlc/standards/engineering-guardrails\.md" CLAUDE.md' \
+  "CLAUDE.md imports the engineering guardrails (add a line: @.sdlc/standards/engineering-guardrails.md)"
 for hook in protect-paths production-gate; do
   ok_if 'grep -q "hooks/$hook.sh" .claude/settings.json' "settings.json still registers $hook.sh"
 done
