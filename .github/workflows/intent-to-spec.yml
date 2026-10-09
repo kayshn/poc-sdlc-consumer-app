@@ -126,7 +126,11 @@ jobs:
               echo "- [ ] Set \`Status: approved\` in the spec, then merge. Merging starts the Build stage."
             fi
           } > pr-body.md
-          ./.sdlc/scripts/open_pr.sh "$branch" "spec: $SLUGS" pr-body.md .sdlc/specs/
+          # --unless per slug: if another run already landed the spec on main, this one bows out
+          # rather than opening a pull request that can never merge.
+          unless=()
+          for s in $SLUGS; do unless+=(--unless ".sdlc/specs/$s.md"); done
+          ./.sdlc/scripts/open_pr.sh "${unless[@]}" "$branch" "spec: $SLUGS" pr-body.md .sdlc/specs/
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
       # Approve as github-actions[bot] (needs "Allow GitHub Actions to create and approve pull requests"),

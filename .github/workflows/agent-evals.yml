@@ -1,15 +1,15 @@
 # Stage 4: the configuration that steers the agent (CLAUDE.md, skills, hooks) is regression-tested
 # like code. No nightly schedule: runs count against the Claude subscription's limits.
 # Make the "evals / suite" check required in branch protection to gate agent-configuration changes.
+# It runs on every pull request and decides internally whether there is anything to test, because a
+# required check that is skipped never reports and blocks the pull request forever.
 #
-# Thin caller — yours to edit. The path filter below is repo-specific; the body is the standard and
-# lives in _agent-evals.yml. In a consumer repo replace the `uses:` line with the pinned form:
-#   uses: kayshn/poc-sdlc-template/.github/workflows/_agent-evals.yml@v1.0.0
+# Thin caller — yours to edit. The triggers below are repo-specific; the body is the standard and
+# lives in _agent-evals.yml.
 name: Agent evals
 
 on:
   pull_request:
-    paths: ["CLAUDE.md", ".sdlc/REVIEW.md", ".claude/**", ".sdlc/evals/**"]
   workflow_dispatch:
 
 permissions:
