@@ -1,3 +1,4 @@
+import threading
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -161,3 +162,79 @@ def test_audit_never_holds_ttl_or_target(client):
     create_ttl(client, 60)
     assert "example.com" not in str(store.audit)
     assert "ttl" not in str(store.audit)
+
+
+def follow_count_of(client, code, user="alice"):
+    links = client.get("/links", headers={"X-User-Id": user}).json()
+    return next(link["follow_count"] for link in links if link["code"] == code)
+
+
+def test_new_link_has_zero_follows(client):
+    body = create(client, "https://example.com/a").json()
+    assert body["follow_count"] == 0
+    assert follow_count_of(client, body["code"]) == 0
+
+
+def test_follow_increments_by_one(client):
+    code = create(client, "https://example.com/a").json()["code"]
+    client.get(f"/{code}")
+    assert follow_count_of(client, code) == 1
+    client.get(f"/{code}")
+    assert follow_count_of(client, code) == 2
+
+
+def test_404_follows_increment_nothing(client):
+    expired_code = create_ttl(client, 60).json()["code"]
+    create(client, "https://example.com/o")
+    expire(expired_code)
+    assert client.get(f"/{expired_code}").status_code == 404
+    assert client.get("/doesnotexist").status_code == 404
+    assert [link.follow_count for link in store.links.values()] == [0, 0]
+
+
+def test_follow_leaves_audit_unchanged(client):
+    code = create(client, "https://example.com/a").json()["code"]
+    before = list(store.audit)
+    client.get(f"/{code}")
+    assert store.audit == before
+
+
+def test_other_users_never_see_the_count(client):
+    code = create(client, "https://example.com/a").json()["code"]
+    response = client.get(f"/{code}")
+    assert "follow_count" not in response.headers
+    assert "follow_count" not in response.text
+    assert client.get("/links", headers={"X-User-Id": "bob"}).json() == []
+
+
+def test_follow_count_cannot_be_set_by_caller(client):
+    response = client.post(
+        "/links",
+        json={"target": "https://example.com", "follow_count": 5},
+        headers={"X-User-Id": "alice"},
+    )
+    assert response.status_code == 422
+
+
+def test_concurrent_follows_are_not_lost(client):
+    code = create(client, "https://example.com/a").json()["code"]
+    link = store.links[code]
+
+    def hammer():
+        for _ in range(1000):
+            store.count_follow(link)
+
+    threads = [threading.Thread(target=hammer) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert link.follow_count == 8000
+
+
+def test_deleted_link_discards_its_count(client):
+    code = create(client, "https://example.com/a").json()["code"]
+    client.get(f"/{code}")
+    client.delete(f"/links/{code}", headers={"X-User-Id": "alice"})
+    assert client.get("/links", headers={"X-User-Id": "alice"}).json() == []
+    assert client.get(f"/{code}").status_code == 404

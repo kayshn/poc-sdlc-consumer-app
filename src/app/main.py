@@ -4,6 +4,7 @@ Storage is in-memory on purpose. The conventions that matter are in CLAUDE.md.
 """
 
 import secrets
+import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
@@ -24,6 +25,7 @@ class Link:
     owner: str
     created_at: datetime
     expires_at: datetime | None = None
+    follow_count: int = 0
 
     def is_expired(self, now: datetime) -> bool:
         return self.expires_at is not None and now >= self.expires_at
@@ -38,6 +40,7 @@ class Link:
 class Store:
     links: dict[str, Link] = field(default_factory=dict)
     audit: list[dict[str, str]] = field(default_factory=list)
+    follow_lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def record(self, actor: str, action: str, entity: str) -> None:
         """Audit entries carry the code, never the target: a target is user content."""
@@ -49,6 +52,11 @@ class Store:
                 "at": datetime.now(UTC).isoformat(),
             }
         )
+
+    def count_follow(self, link: Link) -> None:
+        """A bare counter, deliberately not an audit entry: nothing about the request is kept."""
+        with self.follow_lock:
+            link.follow_count += 1
 
 
 store = Store()
@@ -75,6 +83,7 @@ class LinkOut(BaseModel):
     created_at: datetime
     expires_at: datetime | None
     expired: bool
+    follow_count: int
 
 
 @app.get("/health")
@@ -118,4 +127,5 @@ def follow(code: str) -> RedirectResponse:
     # Expired and unknown share one branch so nothing distinguishes them to a caller.
     if link is None or link.is_expired(datetime.now(UTC)):
         raise HTTPException(status_code=404, detail="no such link")
+    store.count_follow(link)
     return RedirectResponse(url=link.target, status_code=307)
