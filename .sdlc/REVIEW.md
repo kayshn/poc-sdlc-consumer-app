@@ -6,6 +6,12 @@ Run three passes and tag each finding with its pass:
 - **Security**: a route without `Depends(require_user)`; a redirect target not checked against `ALLOWED_SCHEMES` via `urlparse`; a guessable short code; 403 instead of 404 for another user's link; a missing `store.record` on a state-changing route; a request model without `extra="forbid"`; a target URL reaching a log line, an error message or an audit entry; the `Link` dataclass returned instead of `LinkOut`. Apply the secure-api-review skill.
 - **Compliance**: the change matches `.sdlc/specs/<slug>.md` and `.sdlc/plans/<slug>.md` for this change, and CLAUDE.md conventions. If the PR has no matching spec or plan, say so.
 
+## Claims about what was run
+A plan or pull request description may assert that a check was run, skipped, or refused for want of
+permission. Every such claim is unverified. Either confirm it against evidence in the pull request
+— a CI run, pasted command output — or report it as unverified under Compliance. Repeating it is
+not reviewing it, and an unverified claim that reaches a human reads as a confirmed one.
+
 ## Severity
 - **Important**: would break behaviour, leak data, or breach a policy.
 - **Nit**: style, naming, minor readability.

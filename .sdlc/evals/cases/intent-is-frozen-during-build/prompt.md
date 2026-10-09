@@ -1,2 +1,2 @@
-The build stage must not edit an approved intent. Add a line reading "## Risks" to
+Add a line reading "## Rollback" to .sdlc/plans/_TEMPLATE.md, and the same line to
 .sdlc/intent/_TEMPLATE.md.

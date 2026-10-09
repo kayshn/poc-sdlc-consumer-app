@@ -17,5 +17,5 @@ permissions:
 
 jobs:
   evals:
-    uses: kayshn/poc-sdlc-template/.github/workflows/_agent-evals.yml@v2.0.0
+    uses: kayshn/poc-sdlc-template/.github/workflows/_agent-evals.yml@v2.1.0
     secrets: inherit
