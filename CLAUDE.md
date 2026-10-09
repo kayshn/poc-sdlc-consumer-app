@@ -3,6 +3,8 @@
 A URL shortener used to demonstrate the AI-native SDLC loop. Short codes map to absolute `http(s)`
 targets. Callers identify themselves with an `X-User-Id` header; storage is in-memory.
 
+@.sdlc/standards/engineering-guardrails.md
+
 ## Commands
 - Install: `make install`
 - Test: `make test` (healthy output ends with a line like `10 passed in 0.42s`)
